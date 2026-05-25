@@ -1,30 +1,87 @@
 import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
-export default function Navbar({ activeSection, onNavigate, onOpenAuth }) {
+export default function Navbar({ sessionActive }) {
   const [open, setOpen] = useState(false);
+  const location = useLocation();
 
   const links = [
-    { id: 'hero', label: 'Home' },
-    { id: 'about', label: 'About' },
-    { id: 'resume', label: 'Resume' },
-    { id: 'interview', label: 'Mock Interview' },
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'admin', label: 'Admin' },
+    { to: '/', label: 'Home' },
+    { to: '/dashboard', label: 'Dashboard' },
+    { to: '/interview', label: 'Interview' },
+    { to: '/evaluation', label: 'Evaluation' },
   ];
+
+  const handleClose = () => setOpen(false);
+
+  const handleNavigation = (event, to) => {
+    if (location.pathname === '/interview' && sessionActive && to !== '/interview') {
+      const shouldLeave = window.confirm('Are you sure you want to leave? Your current interview progress will be lost.');
+      if (!shouldLeave) {
+        event.preventDefault();
+        return;
+      }
+    }
+    handleClose();
+  };
 
   return (
     <header className={`navbar ${open ? 'open' : ''}`}>
       <div className="nav-inner">
-        <div className="brand">JobReady AI</div>
+        <Link to="/" className="brand" onClick={(event) => handleNavigation(event, '/')}>
+          JobReady AI
+        </Link>
         <nav className="nav-links">
-          {links.map((l) => (
-            <button key={l.id} className={activeSection === l.id ? 'active' : ''} onClick={() => { onNavigate(l.id); setOpen(false); }}>{l.label}</button>
+          {links.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className={`nav-link ${location.pathname === link.to ? 'active' : ''}`}
+              onClick={(event) => handleNavigation(event, link.to)}
+            >
+              {link.label}
+            </Link>
           ))}
         </nav>
+
         <div className="nav-right">
-          <button className="ghost" onClick={() => onOpenAuth('login')}>Login</button>
-          <button onClick={() => onOpenAuth('register')}>Register</button>
-          <button className="hamburger" onClick={() => setOpen((s) => !s)} aria-label="Toggle menu">☰</button>
+          <Link to="/login" className="nav-button ghost" onClick={(event) => handleNavigation(event, '/login')}>
+            Login
+          </Link>
+          <Link to="/signup" className="nav-button primary" onClick={(event) => handleNavigation(event, '/signup')}>
+            Sign Up
+          </Link>
+          <button
+            className="hamburger"
+            onClick={() => setOpen((prev) => !prev)}
+            aria-label="Toggle menu"
+            aria-expanded={open}
+          >
+            ☰
+          </button>
+        </div>
+      </div>
+
+      <div className="mobile-menu" aria-hidden={!open}>
+        <nav className="mobile-links">
+          {links.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className={`nav-link ${location.pathname === link.to ? 'active' : ''}`}
+              onClick={(event) => handleNavigation(event, link.to)}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+        <div className="mobile-actions">
+          <Link to="/login" className="nav-button ghost" onClick={(event) => handleNavigation(event, '/login')}>
+            Login
+          </Link>
+          <Link to="/signup" className="nav-button primary" onClick={(event) => handleNavigation(event, '/signup')}>
+            Sign Up
+          </Link>
         </div>
       </div>
     </header>

@@ -6,12 +6,12 @@ export default function DragDrop({ children, onFile, accept }) {
   const handleDrop = (e) => {
     e.preventDefault();
     const f = e.dataTransfer.files && e.dataTransfer.files[0];
-    if (f && (!accept || f.type === accept)) onFile(f);
+    if (f && onFile) onFile(f);
   };
 
   const handleChange = (e) => {
     const f = e.target.files && e.target.files[0];
-    if (f && (!accept || f.type === accept)) onFile(f);
+    if (f && onFile) onFile(f);
   };
 
   return (
