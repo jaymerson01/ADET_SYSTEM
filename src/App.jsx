@@ -28,7 +28,13 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route
             path="/dashboard"
-            element={<Dashboard onStartSession={handleStartSession} initialRole={sessionBundle?.role || 'Frontend Developer'} initialFile={sessionBundle?.file || null} />}
+            element={
+              <Dashboard
+                onStartSession={handleStartSession}
+                initialRole={sessionBundle?.role || 'Frontend Developer'}
+                initialFile={sessionBundle?.file || null}
+              />
+            }
           />
           <Route path="/interview" element={<InterviewRoom session={sessionBundle} />} />
           <Route path="/evaluation" element={<EvaluationReport />} />

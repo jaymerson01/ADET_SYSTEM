@@ -9,6 +9,7 @@ export default function Dashboard({ onStartSession, initialRole = IT_ROLES[0], i
   const [selectedRole, setSelectedRole] = useState(initialRole);
   const [selectedFile, setSelectedFile] = useState(initialFile);
   const [fileError, setFileError] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
   const navigate = useNavigate();
 
   const handleFileInput = (file) => {
@@ -17,17 +18,31 @@ export default function Dashboard({ onStartSession, initialRole = IT_ROLES[0], i
     if (file.type !== 'application/pdf') {
       setFileError('Only PDF resumes are accepted.');
       setSelectedFile(null);
+      setUploadProgress(0);
       return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
       setFileError('Resume must be under 5MB to upload.');
       setSelectedFile(null);
+      setUploadProgress(0);
       return;
     }
 
     setFileError('');
     setSelectedFile(file);
+    
+    // Simulate upload progress
+    setUploadProgress(0);
+    const interval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return prev + Math.random() * 30;
+      });
+    }, 200);
   };
 
   const hasValidFile = Boolean(selectedFile && selectedFile.type === 'application/pdf' && selectedFile.size <= MAX_FILE_SIZE);
@@ -41,42 +56,66 @@ export default function Dashboard({ onStartSession, initialRole = IT_ROLES[0], i
   return (
     <section className="section page-shell">
       <div className="section-heading">
-        <p className="eyebrow">Resume & Interview Setup</p>
-        <h2 className="heading-xl">Upload your PDF resume and choose your target role</h2>
-        <p className="muted lead-text">Prepare your profile and role preference before beginning the mock interview session.</p>
+        <p className="eyebrow">Interview Setup</p>
+        <h2>Ready to Practice?</h2>
+        <p className="lead-text">Upload your resume and select your target role to begin your AI-powered mock interview session.</p>
       </div>
 
       <div className="dashboard-grid">
-        <div className="card upload-card modern-upload">
-          <h3 className="panel-title">Resume Upload</h3>
+        <div className="upload-card">
+          <h3 className="panel-title">📄 Your Resume</h3>
           <DragDrop onFile={handleFileInput} accept="application/pdf">
-            <div className="upload-inner polished-upload">
-              <p className="muted">Drag and drop your PDF resume here or click to browse.</p>
-              <p className="file-name small">{selectedFile ? selectedFile.name : 'No file selected'}</p>
-              {fileError && <p className="file-error">{fileError}</p>}
-              <button className="button button-secondary w-full" type="button" onClick={handleStartSession} disabled={!hasValidFile}>
-                Start Session
-              </button>
+            <div className="upload-inner">
+              {!selectedFile ? (
+                <>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>⬆️</div>
+                  <p><strong>Drop your resume here or click to browse</strong></p>
+                  <p className="muted">PDF format only, up to 5MB</p>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: '2rem' }}>✅</div>
+                  <p><strong>{selectedFile.name}</strong></p>
+                  <p className="muted">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+                  {uploadProgress > 0 && uploadProgress < 100 && (
+                    <div style={{ width: '100%', height: '4px', background: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden', margin: '0.5rem 0' }}>
+                      <div style={{ width: `${uploadProgress}%`, height: '100%', background: 'var(--accent)', transition: 'width 200ms ease' }} />
+                    </div>
+                  )}
+                </>
+              )}
+              {fileError && <p style={{ color: '#dc2626', fontSize: '0.9rem', margin: '0.5rem 0 0' }}>⚠️ {fileError}</p>}
             </div>
           </DragDrop>
         </div>
 
-        <div className="card role-card dashboard-panel">
-          <h3 className="panel-title">Target role</h3>
-          <label className="input-group">
-            <span className="label-small">Choose your IT role</span>
-            <select value={selectedRole} onChange={(event) => setSelectedRole(event.target.value)}>
-              {IT_ROLES.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </select>
-          </label>
+        <div className="dashboard-panel">
+          <div className="role-card">
+            <h3 className="panel-title">🎯 Target Role</h3>
+            <label className="input-group">
+              <span>Select your IT role</span>
+              <select value={selectedRole} onChange={(event) => setSelectedRole(event.target.value)}>
+                {IT_ROLES.map((role) => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-          <div className="question-banner modern-question">
-            <h3>Interview Details</h3>
-            <p>Once started, your resume and role selection will be linked for the mock interview experience.</p>
+            <div className="question-banner">
+              <h3>💡 Pro Tip</h3>
+              <p>Selecting the right role helps our AI generate relevant questions and provide personalized feedback for your target position.</p>
+            </div>
+
+            <button 
+              className={`button ${hasValidFile ? 'button-primary' : 'button-secondary'} w-full`} 
+              type="button" 
+              onClick={handleStartSession} 
+              disabled={!hasValidFile}
+            >
+              {hasValidFile ? 'Start Interview Session →' : 'Upload Resume to Continue'}
+            </button>
           </div>
         </div>
       </div>

@@ -1,142 +1,156 @@
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from "react";
 
-const SYSTEM_PROMPT = 'Welcome to your mock interview. Answer each prompt as if you were presenting yourself to an IT hiring manager.';
+function InterviewRoom() {
+  const [answer, setAnswer] = useState("");
+  const [isListening, setIsListening] = useState(false);
 
-export default function InterviewRoom({ session }) {
-  const navigate = useNavigate();
-  const [messages, setMessages] = useState(() => [
+  const [messages, setMessages] = useState([
     {
-      sender: 'ai',
-      text: session?.role
-        ? `Let\'s begin your ${session.role} mock interview. Please respond to each prompt clearly and confidently.`
-        : SYSTEM_PROMPT,
+      type: "ai",
+      text: "Hi! I’m your AI interviewer. Please introduce yourself and tell me about your technical background.",
     },
   ]);
-  const [inputText, setInputText] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [turnCount, setTurnCount] = useState(0);
-  const [showEvaluationAction, setShowEvaluationAction] = useState(false);
-  const chatEndRef = useRef(null);
 
-  const handleSendMessageToBackend = async (text) => {
-    // Placeholder for backend integration with Python API
-    await new Promise((resolve) => setTimeout(resolve, 750));
-    return `AI: I received your answer: \"${text}\". Please continue with the next question.`;
+  const sendAnswer = () => {
+    if (!answer.trim()) return;
+
+    setMessages((prev) => [
+      ...prev,
+      { type: "user", text: answer },
+      {
+        type: "ai",
+        text: "Nice answer. Now, can you explain one project you built and what your role was?",
+      },
+    ]);
+
+    setAnswer("");
   };
 
-  const handleCompleteInterview = async () => {
-    navigate('/evaluation');
-  };
+  const clearAnswer = () => setAnswer("");
 
-  useEffect(() => {
-    if (turnCount >= 5) {
-      setShowEvaluationAction(true);
+  const startVoiceInput = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Voice recognition is not supported. Please use Chrome.");
+      return;
     }
-  }, [turnCount]);
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, [messages, isLoading]);
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
 
-  const appendMessage = (message) => {
-    setMessages((prev) => [...prev, message]);
+    recognition.onstart = () => setIsListening(true);
+
+    recognition.onresult = (event) => {
+      setAnswer(event.results[0][0].transcript);
+    };
+
+    recognition.onend = () => setIsListening(false);
+
+    recognition.start();
   };
-
-  const handleSend = async () => {
-    const trimmed = inputText.trim();
-    if (!trimmed || isLoading) return;
-
-    appendMessage({ sender: 'user', text: trimmed });
-    setInputText('');
-    setIsLoading(true);
-
-    const response = await handleSendMessageToBackend(trimmed);
-    appendMessage({ sender: 'ai', text: response });
-    setIsLoading(false);
-    setTurnCount((count) => count + 1);
-  };
-
-  const handleKeyDown = (event) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      handleSend();
-    }
-  };
-
-  const currentPrompt = messages.length > 0 ? messages[messages.length - 1]?.text : SYSTEM_PROMPT;
 
   return (
-    <section className="section layout-shell">
-      <div className="section-heading">
-        <p className="eyebrow">Interview Room</p>
-        <h2 className="heading-xl">{session?.role ? `${session.role} Mock Interview` : 'Mock Interview'}</h2>
-        <p className="muted lead-text">
-          {session?.file ? `Using resume: ${session.file.name}` : 'Upload a PDF resume first to connect it to your session.'}
-        </p>
-      </div>
-
-      <div className="review-grid">
-        <div className="card status-panel">
-          <div className="panel-header">
-            <h3>Status Overview</h3>
-            <span className="tag">Turn {turnCount} / 5</span>
-          </div>
-          <div className="panel-body">
-            <p><strong>Selected role:</strong> {session?.role || 'Not selected yet'}</p>
-            <p><strong>Resume:</strong> {session?.file ? session.file.name : 'No file attached'}</p>
-            <p className="muted">Current prompt shown in the chat window below.</p>
-          </div>
+    <div className="interview-page">
+      <section className="interview-hero">
+        <div>
+          <span className="eyebrow">AI Mock Interview</span>
+          <h1>Practice like it’s the real thing.</h1>
+          <p>
+            Answer interview questions, use voice input, and prepare confidently
+            for your target IT role.
+          </p>
         </div>
 
-        <div className="card chat-panel">
-          <div className="chat-surface">
-            <div className="chat-log">
-              {messages.map((message, index) => (
-                <div key={index} className={`message ${message.sender}`}>
-                  <div className="message-label">{message.sender === 'ai' ? 'Interviewer' : 'You'}</div>
-                  <p>{message.text}</p>
-                </div>
-              ))}
-              {isLoading && (
-                <div className="thinking-indicator">
-                  <span className="dot" />
-                  <span className="dot" />
-                  <span className="dot" />
-                  <span>AI is thinking...</span>
-                </div>
-              )}
-            </div>
+        <div className="interview-badge">
+          <span>● Live Session</span>
+          <strong>Frontend Developer</strong>
+        </div>
+      </section>
+
+      <section className="interview-layout">
+        <aside className="interview-sidebar">
+          <div className="ai-avatar">AI</div>
+
+          <h3>Interview Progress</h3>
+          <p>Question 2 of 5</p>
+
+          <div className="progress-wrap">
+            <div className="progress-bar"></div>
           </div>
 
-          <div className="chat-input-panel">
+          <div className="interview-stats">
+            <div>
+              <span>92%</span>
+              <p>Confidence</p>
+            </div>
+
+            <div>
+              <span>4m</span>
+              <p>Time Used</p>
+            </div>
+
+            <div>
+              <span>Good</span>
+              <p>Status</p>
+            </div>
+          </div>
+        </aside>
+
+        <main className="interview-chat-card">
+          <div className="chat-topbar">
+            <div>
+              <h2>AI Interview Room</h2>
+              <p>Answer clearly and professionally.</p>
+            </div>
+
+            <span className="session-pill">
+              {isListening ? "Listening..." : "Ready"}
+            </span>
+          </div>
+
+          <div className="chat-window">
+            {messages.map((msg, index) => (
+              <div key={index} className={`chat-message ${msg.type}`}>
+                <div className="message-avatar">
+                  {msg.type === "ai" ? "AI" : "YOU"}
+                </div>
+
+                <div className="message-bubble">
+                  <span>{msg.type === "ai" ? "AI Interviewer" : "Your Answer"}</span>
+                  <p>{msg.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="answer-box">
             <textarea
-              className="dark-input"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type your answer here and press Enter or click Send..."
+              placeholder="Type your answer here or use voice command..."
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
             />
-            <div className="chat-actions">
-              <button className="button button-primary" type="button" onClick={handleSend} disabled={!inputText.trim() || isLoading}>
-                Send
+
+            <div className="answer-actions">
+              <button className="button button-primary" onClick={sendAnswer}>
+                Send Answer
               </button>
-              <button className="button button-ghost" type="button" onClick={() => setInputText('')}>
+
+              <button className="button voice-btn" onClick={startVoiceInput}>
+                {isListening ? "Listening..." : "🎤 Voice Answer"}
+              </button>
+
+              <button className="button button-secondary" onClick={clearAnswer}>
                 Clear
               </button>
             </div>
           </div>
-
-          {showEvaluationAction && (
-            <div className="feedback-summary polished-summary">
-              <p>You've completed the interview practice session.</p>
-              <button className="button button-secondary" type="button" onClick={handleCompleteInterview}>
-                Go to Evaluation Report
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </section>
+        </main>
+      </section>
+    </div>
   );
 }
+
+export default InterviewRoom;
