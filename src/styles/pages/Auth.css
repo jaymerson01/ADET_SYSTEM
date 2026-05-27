@@ -1,0 +1,133 @@
+.auth-card {
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2.25rem;
+  background: var(--bg-white);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.auth-header {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.auth-form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.input-group,
+.checkbox-group {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.input-group span,
+.checkbox-group span {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.auth-form input,
+.auth-form select,
+.dark-input,
+input:not([type="checkbox"]),
+select,
+textarea {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-white);
+  color: var(--text-primary);
+  padding: 0.95rem 1rem;
+  font-size: 0.95rem;
+  transition: all 200ms ease;
+}
+
+.auth-form input::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+.auth-form input:focus,
+.auth-form select:focus,
+.dark-input:focus,
+textarea:focus,
+input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+  background: var(--bg-white);
+}
+
+.divider {
+  display: grid;
+  place-items: center;
+  margin: 1.5rem 0;
+  position: relative;
+}
+
+.divider span {
+  padding: 0 1rem;
+  color: var(--text-tertiary);
+  font-size: 0.9rem;
+  background: var(--bg-white);
+  position: relative;
+  z-index: 1;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  inset: 50% 0 0;
+  height: 1px;
+  background: var(--border-color);
+  transform: translateY(-50%);
+}
+
+.checkbox-group {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.form-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.form-footer {
+  margin-top: 1.5rem;
+  color: var(--text-secondary);
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.form-footer a,
+.inline-link,
+.muted-link {
+  color: var(--accent);
+  text-decoration: none;
+  transition: opacity 200ms ease;
+}
+
+.form-footer a:hover,
+.inline-link:hover,
+.muted-link:hover {
+  opacity: 0.75;
+}
