@@ -17,10 +17,16 @@ export default function Signup() {
     confirmPassword: '',
     agreed: false,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    // Placeholder for sign up submission
+    setIsSubmitting(true);
+    try {
+      // Placeholder for sign up submission
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (field, value) => {
@@ -101,8 +107,8 @@ export default function Signup() {
             <span>I agree to the Terms of Service</span>
           </label>
 
-          <button className="button button-primary w-full" type="submit" disabled={!form.agreed}>
-            Sign Up
+          <button className="button button-primary w-full" type="submit" disabled={!form.agreed || isSubmitting}>
+            {isSubmitting ? 'Signing Up...' : 'Sign Up'}
           </button>
         </form>
 

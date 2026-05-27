@@ -10,6 +10,7 @@ export default function Dashboard({ onStartSession, initialRole = IT_ROLES[0], i
   const [selectedFile, setSelectedFile] = useState(initialFile);
   const [fileError, setFileError] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleFileInput = (file) => {
@@ -47,10 +48,23 @@ export default function Dashboard({ onStartSession, initialRole = IT_ROLES[0], i
 
   const hasValidFile = Boolean(selectedFile && selectedFile.type === 'application/pdf' && selectedFile.size <= MAX_FILE_SIZE);
 
-  const handleStartSession = () => {
-    if (!hasValidFile) return;
-    onStartSession({ file: selectedFile, role: selectedRole });
-    navigate('/interview');
+  const handleStartSession = async () => {
+    if (!hasValidFile || isLoading) return;
+
+    setIsLoading(true);
+
+    try {
+      onStartSession({ file: selectedFile, role: selectedRole });
+
+      // TODO: Replace this comment with your backend request.
+      // Example: use fetch() or axios.post() to upload multipart form-data
+      // and send selectedFile + selectedRole to the Python API.
+      // await uploadResumeToBackend(selectedFile, selectedRole);
+
+      navigate('/interview');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -109,12 +123,12 @@ export default function Dashboard({ onStartSession, initialRole = IT_ROLES[0], i
             </div>
 
             <button 
-              className={`button ${hasValidFile ? 'button-primary' : 'button-secondary'} w-full`} 
+              className={`button ${hasValidFile && !isLoading ? 'button-primary' : 'button-secondary'} w-full`} 
               type="button" 
               onClick={handleStartSession} 
-              disabled={!hasValidFile}
+              disabled={!hasValidFile || isLoading}
             >
-              {hasValidFile ? 'Start Interview Session →' : 'Upload Resume to Continue'}
+              {isLoading ? 'Processing Resume...' : hasValidFile ? 'Start Interview Session →' : 'Upload Resume to Continue'}
             </button>
           </div>
         </div>
