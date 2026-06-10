@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic
+email-validator
+python-multipart
+python-dotenv
+pdfplumber
+google-generativeai
+pwdlib[argon2]
+pyjwt
