@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DragDrop from '../components/DragDrop.jsx';
+import { startInterviewSession } from '../services/api.js';
 
 const IT_ROLES = ['Frontend Developer', 'Backend Developer', 'QA Engineer', 'Data Analyst'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -52,16 +53,20 @@ export default function Dashboard({ onStartSession, initialRole = IT_ROLES[0], i
     if (!hasValidFile || isLoading) return;
 
     setIsLoading(true);
+    setFileError('');
 
     try {
-      onStartSession({ file: selectedFile, role: selectedRole });
+      const result = await startInterviewSession(selectedFile, selectedRole);
 
-      // TODO: Replace this comment with your backend request.
-      // Example: use fetch() or axios.post() to upload multipart form-data
-      // and send selectedFile + selectedRole to the Python API.
-      // await uploadResumeToBackend(selectedFile, selectedRole);
+      onStartSession({ 
+        file: selectedFile, 
+        role: selectedRole, 
+        session_id: result.session_id 
+      });
 
       navigate('/interview');
+    } catch (err) {
+      setFileError(err.message || 'Failed to start interview session.');
     } finally {
       setIsLoading(false);
     }

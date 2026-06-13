@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from database import Base
@@ -25,6 +25,9 @@ class InterviewSession(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     target_role = Column(String(100), nullable=False)
     resume_text = Column(Text, nullable=True)
+    is_completed = Column(Boolean, default=False, nullable=False)
+    evaluation_report = Column(Text, nullable=True)
+    overall_score = Column(Integer, nullable=True)
 
     user = relationship("User", back_populates="interview_sessions")
     chat_transcripts = relationship("ChatTranscript", back_populates="session", cascade="all, delete-orphan")

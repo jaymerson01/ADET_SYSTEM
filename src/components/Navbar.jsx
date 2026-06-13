@@ -1,16 +1,34 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 export default function Navbar({ sessionActive }) {
   const [open, setOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(Boolean(localStorage.getItem('access_token')));
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const links = [
-    { to: '/', label: 'Home' },
-    { to: '/dashboard', label: 'Dashboard' },
-    { to: '/interview', label: 'Interview' },
-    { to: '/evaluation', label: 'Evaluation' },
-  ];
+  useEffect(() => {
+    setIsAuthenticated(Boolean(localStorage.getItem('access_token')));
+  }, [location]);
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setIsAuthenticated(Boolean(localStorage.getItem('access_token')));
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const links = isAuthenticated
+    ? [
+        { to: '/', label: 'Home' },
+        { to: '/dashboard', label: 'Dashboard' },
+        ...(sessionActive ? [{ to: '/interview', label: 'Interview' }] : []),
+        { to: '/evaluation', label: 'Evaluation' },
+      ]
+    : [
+        { to: '/', label: 'Home' },
+      ];
 
   const handleClose = () => setOpen(false);
 
@@ -23,6 +41,15 @@ export default function Navbar({ sessionActive }) {
       }
     }
     handleClose();
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('active_session_id');
+    localStorage.removeItem('active_role');
+    setIsAuthenticated(false);
+    handleClose();
+    navigate('/login');
   };
 
   return (
@@ -45,12 +72,25 @@ export default function Navbar({ sessionActive }) {
         </nav>
 
         <div className="nav-right">
-          <Link to="/login" className="nav-button ghost" onClick={(event) => handleNavigation(event, '/login')}>
-            Login
-          </Link>
-          <Link to="/signup" className="nav-button primary" onClick={(event) => handleNavigation(event, '/signup')}>
-            Sign Up
-          </Link>
+          {isAuthenticated ? (
+            <button
+              type="button"
+              className="nav-button ghost"
+              onClick={handleLogout}
+              style={{ border: 'none', background: 'none', cursor: 'pointer' }}
+            >
+              Logout
+            </button>
+          ) : (
+            <>
+              <Link to="/login" className="nav-button ghost" onClick={(event) => handleNavigation(event, '/login')}>
+                Login
+              </Link>
+              <Link to="/signup" className="nav-button primary" onClick={(event) => handleNavigation(event, '/signup')}>
+                Sign Up
+              </Link>
+            </>
+          )}
           <button
             className="hamburger"
             onClick={() => setOpen((prev) => !prev)}
@@ -76,12 +116,25 @@ export default function Navbar({ sessionActive }) {
           ))}
         </nav>
         <div className="mobile-actions">
-          <Link to="/login" className="nav-button ghost" onClick={(event) => handleNavigation(event, '/login')}>
-            Login
-          </Link>
-          <Link to="/signup" className="nav-button primary" onClick={(event) => handleNavigation(event, '/signup')}>
-            Sign Up
-          </Link>
+          {isAuthenticated ? (
+            <button
+              type="button"
+              className="nav-button ghost w-full"
+              onClick={handleLogout}
+              style={{ border: 'none', background: 'none', cursor: 'pointer' }}
+            >
+              Logout
+            </button>
+          ) : (
+            <>
+              <Link to="/login" className="nav-button ghost" onClick={(event) => handleNavigation(event, '/login')}>
+                Login
+              </Link>
+              <Link to="/signup" className="nav-button primary" onClick={(event) => handleNavigation(event, '/signup')}>
+                Sign Up
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>

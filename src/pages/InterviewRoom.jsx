@@ -1,13 +1,47 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "../styles/pages/InterviewRoom.css";
+import { sendChatMessage, evaluateSession, getSessionHistory } from "../services/api.js";
 
 function InterviewRoom({ session: sessionBundle }) {
   const [answer, setAnswer] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("AI is typing...");
   const [isListening, setIsListening] = useState(false);
   const [turnCount, setTurnCount] = useState(1);
   const [sessionTime, setSessionTime] = useState({ minutes: 0, seconds: 0 });
+  const [status, setStatus] = useState("Good");
   const chatEndRef = useRef(null);
+  const navigate = useNavigate();
+
+  const getStatusConfig = () => {
+    switch (status) {
+      case "Excellent":
+        return {
+          bg: "#DCFCE7",
+          border: "#86EFAC",
+          dot: "#22C55E",
+          text: "#15803D",
+        };
+      case "Needs Improvement":
+        return {
+          bg: "#FEF3C7",
+          border: "#FDE68A",
+          dot: "#D97706",
+          text: "#92400E",
+        };
+      case "Good":
+      default:
+        return {
+          bg: "#EFF6FF",
+          border: "#BFDBFE",
+          dot: "#3B82F6",
+          text: "#1E40AF",
+        };
+    }
+  };
+
+  const statusConfig = getStatusConfig();
 
   const [messages, setMessages] = useState([
     {
@@ -15,6 +49,38 @@ function InterviewRoom({ session: sessionBundle }) {
       text: "Hi! I’m your AI interviewer. Please introduce yourself and tell me about your technical background.",
     },
   ]);
+
+  // Load existing session history on mount if available
+  useEffect(() => {
+    const loadSessionHistory = async () => {
+      if (!sessionBundle?.session_id) return;
+      try {
+        const history = await getSessionHistory(sessionBundle.session_id);
+        if (history && history.length > 0) {
+          const loadedMessages = [
+            {
+              type: "ai",
+              text: "Hi! I’m your AI interviewer. Please introduce yourself and tell me about your technical background.",
+            }
+          ];
+          history.forEach(t => {
+            loadedMessages.push({
+              type: t.sender === "user" ? "user" : "ai",
+              text: t.message_text
+            });
+          });
+          setMessages(loadedMessages);
+          
+          const userTurns = history.filter(t => t.sender === "user").length;
+          setTurnCount(userTurns + 1);
+        }
+      } catch (err) {
+        console.error("Failed to load interview history:", err);
+      }
+    };
+    
+    loadSessionHistory();
+  }, [sessionBundle?.session_id]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -45,22 +111,66 @@ function InterviewRoom({ session: sessionBundle }) {
 
     setMessages((prev) => [...prev, { type: "user", text: messageText }]);
     setAnswer("");
+
+    if (turnCount === 7) {
+      setLoadingMessage("Submitting final response and evaluating...");
+      setIsLoading(true);
+      try {
+        // 1. Submit final message to FastAPI chat loop
+        await sendChatMessage(sessionBundle.session_id, messageText);
+
+        // 2. Trigger evaluation report
+        setLoadingMessage("Generating your report metrics...");
+        const evaluation = await evaluateSession(sessionBundle.session_id);
+
+        // 3. Route to evaluation report
+        navigate("/evaluation", { state: { reportData: evaluation } });
+      } catch (err) {
+        alert(err.message || "Failed to finalize and evaluate interview.");
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    setLoadingMessage("AI is thinking...");
     setIsLoading(true);
 
     try {
-      // TODO: Replace this placeholder with the real Python backend request.
-      // Example: const response = await fetch('/api/interview', { method: 'POST', body: jsonPayload });
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      const response = await sendChatMessage(sessionBundle.session_id, messageText);
 
       setMessages((prev) => [
         ...prev,
         {
           type: "ai",
-          text: "Nice answer. Now, can you explain one project you built and what your role was?",
+          text: response.response || response.text || "No response generated.",
         },
       ]);
 
-      if (turnCount < 5) setTurnCount((count) => count + 1);
+      if (response.status) {
+        setStatus(response.status);
+      }
+
+      setTurnCount((count) => count + 1);
+    } catch (err) {
+      alert(err.message || "Failed to send message.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEndInterview = async () => {
+    if (!sessionBundle?.session_id) {
+      alert("No active session found.");
+      return;
+    }
+    setLoadingMessage("Generating your report metrics...");
+    setIsLoading(true);
+    try {
+      const evaluation = await evaluateSession(sessionBundle.session_id);
+      navigate("/evaluation", { state: { reportData: evaluation } });
+    } catch (err) {
+      alert(err.message || "Failed to generate evaluation report.");
     } finally {
       setIsLoading(false);
     }
@@ -117,7 +227,7 @@ function InterviewRoom({ session: sessionBundle }) {
 
         <div className="interview-badge">
           <span>● Live Session</span>
-          <strong>Frontend Developer</strong>
+          <strong>{sessionBundle?.role || "Frontend Developer"}</strong>
         </div>
       </section>
 
@@ -130,13 +240,13 @@ function InterviewRoom({ session: sessionBundle }) {
             <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem", marginBottom: "0.75rem" }}>
               <span style={{ fontSize: "1.875rem", fontWeight: "700" }}>{turnCount}</span>
               <span style={{ color: "var(--text-secondary)" }}>of</span>
-              <span>5</span>
+              <span>7</span>
             </div>
             {/* Progress bar */}
             <div className="progress-wrap">
               <div
                 className="progress-bar"
-                style={{ width: `${(turnCount / 5) * 100}%` }}
+                style={{ width: `${(turnCount / 7) * 100}%` }}
               ></div>
             </div>
           </div>
@@ -162,8 +272,8 @@ function InterviewRoom({ session: sessionBundle }) {
                 gap: "0.5rem",
                 padding: "0.5rem 0.75rem",
                 borderRadius: "999px",
-                backgroundColor: "#DCFCE7",
-                border: "1px solid #86EFAC",
+                backgroundColor: statusConfig.bg,
+                border: `1px solid ${statusConfig.border}`,
               }}
             >
               <span
@@ -171,11 +281,13 @@ function InterviewRoom({ session: sessionBundle }) {
                   display: "inline-block",
                   width: "0.5rem",
                   height: "0.5rem",
-                  backgroundColor: "#22C55E",
+                  backgroundColor: statusConfig.dot,
                   borderRadius: "50%",
                 }}
               ></span>
-              <span style={{ fontSize: "0.875rem", fontWeight: "500", color: "#15803D" }}>Good</span>
+              <span style={{ fontSize: "0.875rem", fontWeight: "500", color: statusConfig.text }}>
+                {status}
+              </span>
             </div>
             <p style={{ fontSize: "0.75rem", color: "var(--text-tertiary)", marginTop: "0.75rem" }}>
               In Progress
@@ -225,7 +337,7 @@ function InterviewRoom({ session: sessionBundle }) {
                 <div className="message-avatar">AI</div>
                 <div className="message-bubble">
                   <span>AI Interviewer</span>
-                  <p>AI is typing...</p>
+                  <p>{loadingMessage}</p>
                 </div>
               </div>
             )}
@@ -247,23 +359,18 @@ function InterviewRoom({ session: sessionBundle }) {
                 {isLoading ? 'Sending...' : 'Send Answer'}
               </button>
 
-              <button
-                type="button"
-                className="button voice-btn"
-                onClick={handleVoiceInputToggle}
-                disabled={isLoading}
-                style={{
-                  backgroundColor: isListening ? "#EF4444" : "var(--bg-light)",
-                  color: isListening ? "#FFFFFF" : "var(--text-secondary)",
-                  boxShadow: isListening ? "0 0 20px rgba(239, 68, 68, 0.5)" : "none",
-                  animation: isListening ? "pulse 2s infinite" : "none",
-                }}
-              >
-                🎤 {isListening ? "Recording..." : "Voice Answer"}
-              </button>
-
               <button type="button" className="button button-secondary" onClick={clearAnswer} disabled={isLoading}>
                 Clear
+              </button>
+
+              <button 
+                type="button" 
+                className="button" 
+                onClick={handleEndInterview} 
+                disabled={isLoading}
+                style={{ backgroundColor: '#EF4444', color: '#FFFFFF', border: 'none', marginLeft: 'auto' }}
+              >
+                End Interview
               </button>
             </div>
           </form>

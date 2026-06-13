@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
@@ -10,13 +10,22 @@ import Login from './pages/Login.jsx';
 import Signup from './pages/Signup.jsx';
 
 function App() {
-  const [sessionBundle, setSessionBundle] = useState(null);
+  const [sessionBundle, setSessionBundle] = useState(() => {
+    const savedSessionId = localStorage.getItem('active_session_id');
+    const savedRole = localStorage.getItem('active_role');
+    if (savedSessionId && savedRole) {
+      return { session_id: parseInt(savedSessionId, 10), role: savedRole };
+    }
+    return null;
+  });
   const location = useLocation();
   const showAppChrome = ['/', '/dashboard', '/interview', '/evaluation'].includes(location.pathname);
 
-  const handleStartSession = ({ file, role }) => {
+  const handleStartSession = ({ file, role, session_id }) => {
     if (!file || !role) return;
-    setSessionBundle({ file, role, startedAt: new Date() });
+    localStorage.setItem('active_session_id', session_id);
+    localStorage.setItem('active_role', role);
+    setSessionBundle({ file, role, session_id, startedAt: new Date() });
   };
 
   return (
@@ -37,7 +46,7 @@ function App() {
             }
           />
           <Route path="/interview" element={<InterviewRoom session={sessionBundle} />} />
-          <Route path="/evaluation" element={<EvaluationReport />} />
+          <Route path="/evaluation" element={<EvaluationReport session={sessionBundle} />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="*" element={<Home />} />

@@ -1,11 +1,20 @@
+import os
+from dotenv import load_dotenv
+
+# Force initialization of the root-level .env settings file
+load_dotenv(override=True)
+
+
 import pdfplumber
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
+
 from auth import get_current_user, router as auth_router
 from database import Base, engine, get_db
 from models import InterviewSession
+from routers.interview import router as interview_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -20,6 +29,8 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(interview_router)
+
 
 
 @app.post("/api/session/start", status_code=status.HTTP_201_CREATED)

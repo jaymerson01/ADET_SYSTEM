@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { signup } from '../services/api.js';
 
 const MAJORS = [
   'BS Information Technology',
@@ -18,12 +19,29 @@ export default function Signup() {
     agreed: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setIsSubmitting(true);
+    setError('');
+
+    if (form.password !== form.confirmPassword) {
+      setError('Passwords do not match');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      // Placeholder for sign up submission
+      await signup(form.fullName, form.email, form.major, form.password);
+      navigate('/dashboard');
+    } catch (err) {
+      if (err.message && err.message.includes('Email already registered')) {
+        setError('This email is already in use.');
+      } else {
+        setError(err.message || 'Signup failed. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -41,6 +59,8 @@ export default function Signup() {
           <h2 className="heading-xl">Join JobReady AI</h2>
           <p className="muted lead-text">Sign up to access mock interviews, resume review, and career prep tools.</p>
         </div>
+
+        {error && <p style={{ color: '#dc2626', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', padding: '0.75rem', borderRadius: '8px', fontSize: '0.9rem', marginBottom: '1.5rem', textAlign: 'center' }}>⚠️ {error}</p>}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <label className="input-group">

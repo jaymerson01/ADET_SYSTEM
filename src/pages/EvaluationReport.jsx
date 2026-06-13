@@ -1,5 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
 import "../styles/pages/EvaluationReport.css";
+import { getSessionEvaluation } from "../services/api.js";
 
 const defaultReportData = {
   metrics: {
@@ -28,16 +30,111 @@ const defaultReportData = {
   ],
 };
 
-export default function EvaluationReport({ reportData }) {
+export default function EvaluationReport({ reportData, session }) {
   const location = useLocation();
-  const data = reportData || location.state?.reportData || defaultReportData;
-  const { metrics, recommendations } = data;
+  const [rawData, setRawData] = useState(reportData || location.state?.reportData || null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Empty boilerplate function: Future html2pdf.js logic here
-  const handleDownloadPDF = () => {
-    /* Future html2pdf.js logic here */
-    console.log("Download PDF triggered");
-  };
+  useEffect(() => {
+    const fetchReport = async () => {
+      const sessionId = session?.session_id || localStorage.getItem('active_session_id');
+      if (rawData || !sessionId) return;
+      setIsLoading(true);
+      setError(null);
+      try {
+        const evaluation = await getSessionEvaluation(sessionId);
+        setRawData(evaluation);
+      } catch (err) {
+        setError(err.message || "Failed to load report from server.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchReport();
+  }, [rawData, session?.session_id]);
+
+  if (isLoading) {
+    return (
+      <section className="section page-shell page-stack" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '1rem', animation: 'spin 1.5s linear infinite' }}>⏳</div>
+          <h3>Generating report metrics...</h3>
+          <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Please wait while we fetch your analysis from the server.</p>
+        </div>
+        <style>{`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="section page-shell page-stack" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <div className="card" style={{ padding: '2.5rem', textAlign: 'center', maxWidth: '500px' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+          <h3 style={{ color: '#dc2626', marginBottom: '1rem' }}>Error Loading Evaluation</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>{error}</p>
+          <Link to="/dashboard" className="button button-primary" style={{ textDecoration: 'none' }}>
+            Go to Dashboard
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  const isRealData = Boolean(rawData);
+
+  // Initialize defaults
+  let metrics = defaultReportData.metrics;
+  let recommendations = defaultReportData.recommendations;
+  let strengths = [];
+  let weaknesses = [];
+  let summaryText = "Comprehensive AI-driven analysis of your interview responses and resume alignment with your target role.";
+
+  if (isRealData) {
+    summaryText = rawData.summary || summaryText;
+    
+    // Map recommendations from a list of strings
+    recommendations = (rawData.recommendations || []).map((rec, index) => {
+      if (typeof rec === 'string') {
+        const colonIndex = rec.indexOf(':');
+        if (colonIndex !== -1) {
+          return {
+            title: rec.substring(0, colonIndex).trim(),
+            description: rec.substring(colonIndex + 1).trim()
+          };
+        }
+        return {
+          title: `Recommendation ${index + 1}`,
+          description: rec
+        };
+      }
+      return rec;
+    });
+
+    strengths = rawData.strengths || [];
+    weaknesses = rawData.weaknesses || [];
+
+    // Map metrics based on overall score
+    metrics = {
+      interviewPerformance: rawData.overall_score || 0,
+      resumeStrength: 85, // Static fallback placeholder for resume
+      roleFit: parseFloat((rawData.overall_score / 20).toFixed(1)),
+      keyStrength: strengths[0] || "Structured Communication",
+      questionsAnswered: "Completed",
+      responseQuality: (rawData.overall_score / 20).toFixed(1),
+      clarityScore: rawData.overall_score || 0,
+      focusArea: weaknesses[0] || "Interview Performance",
+    };
+  }
+
+
 
   return (
     <section className="section page-shell page-stack">
@@ -45,7 +142,7 @@ export default function EvaluationReport({ reportData }) {
       <div className="section-heading">
         <p className="eyebrow">Your Performance</p>
         <h2>Interview & Resume Evaluation</h2>
-        <p>Comprehensive AI-driven analysis of your interview responses and resume alignment with your target role.</p>
+        <p>{summaryText}</p>
       </div>
 
       {/* Top Performance Scorecards (4-Column Grid) */}
@@ -144,16 +241,32 @@ export default function EvaluationReport({ reportData }) {
         </div>
       </div>
 
+      {isRealData && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2rem", marginTop: "2rem" }}>
+          {/* Strengths Card */}
+          <div className="card" style={{ padding: "2rem" }}>
+            <h3 style={{ marginBottom: "1.5rem", color: "#16a34a" }}>✨ Key Strengths</h3>
+            <ul style={{ paddingLeft: "1.25rem", margin: 0, display: "grid", gap: "0.75rem" }}>
+              {strengths.map((s, index) => (
+                <li key={index} style={{ color: "var(--text-secondary)", lineHeight: "1.5" }}>{s}</li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Weaknesses Card */}
+          <div className="card" style={{ padding: "2rem" }}>
+            <h3 style={{ marginBottom: "1.5rem", color: "#dc2626" }}>⚠️ Areas for Improvement</h3>
+            <ul style={{ paddingLeft: "1.25rem", margin: 0, display: "grid", gap: "0.75rem" }}>
+              {weaknesses.map((w, index) => (
+                <li key={index} style={{ color: "var(--text-secondary)", lineHeight: "1.5" }}>{w}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Action Container */}
       <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginTop: "2rem", justifyContent: "flex-end" }}>
-        <button
-          onClick={handleDownloadPDF}
-          className="button button-secondary"
-          style={{ textDecoration: "none" }}
-        >
-          📥 Download Report
-        </button>
-
         <Link
           to="/dashboard"
           className="button button-primary"

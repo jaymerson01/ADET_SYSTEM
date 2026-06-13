@@ -1,12 +1,16 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { login } from '../services/api.js';
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleGoogleLogin = async () => {
     setIsSubmitting(true);
+    setError('');
     try {
       // Placeholder for Google login integration
     } finally {
@@ -17,8 +21,12 @@ export default function Login() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setIsSubmitting(true);
+    setError('');
     try {
-      // Placeholder for login submission
+      await login(form.email, form.password);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setIsSubmitting(false);
     }
@@ -32,6 +40,8 @@ export default function Login() {
           <h2>Welcome back</h2>
           <p className="lead-text">Sign in with your school email to continue.</p>
         </div>
+
+        {error && <p style={{ color: '#dc2626', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', padding: '0.75rem', borderRadius: '8px', fontSize: '0.9rem', marginBottom: '1.5rem', textAlign: 'center' }}>⚠️ {error}</p>}
 
         <button type="button" className="button button-secondary w-full" onClick={handleGoogleLogin} disabled={isSubmitting} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
