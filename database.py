@@ -3,18 +3,28 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-DATABASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "data"))
-os.makedirs(DATABASE_DIR, exist_ok=True)
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    DATABASE_URL = "sqlite:///./sql_app.db"
 
-DATABASE_URL = f"sqlite:///{os.path.join(DATABASE_DIR, 'adet_system.db')}"
+# Normalize production platform URL strings if they start with postgres://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 Base = declarative_base()
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    future=True,
-)
+# SQLite requires connect_args for multithreading, while PostgreSQL does not accept it
+if "sqlite" in DATABASE_URL:
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        future=True,
+    )
+else:
+    engine = create_engine(
+        DATABASE_URL,
+        future=True,
+    )
 
 SessionLocal = sessionmaker(
     autocommit=False,

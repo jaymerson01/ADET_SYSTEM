@@ -8,7 +8,7 @@ import google.generativeai as genai
 
 from database import get_db
 from auth import get_current_user
-from models import InterviewSession, ChatTranscript
+from models import InterviewSession, ChatTranscript, EvaluationReport
 
 router = APIRouter(prefix="/api/interview", tags=["interview"])
 
@@ -69,92 +69,62 @@ def generate_mock_evaluation(role: str, transcripts) -> str:
         user_answers = ["Hello"] # Safe fallback
         
     scores = []
-    excellent_count = 0
-    good_count = 0
-    needs_improvement_count = 0
-    
     for ans in user_answers:
         length = len(ans.strip())
         if length > 100:
-            scores.append(95)
-            excellent_count += 1
+            scores.append(5.0)
         elif length >= 40:
-            scores.append(80)
-            good_count += 1
+            scores.append(4.0)
         else:
-            scores.append(55)
-            needs_improvement_count += 1
+            scores.append(2.5)
             
-    overall_score = int(sum(scores) / len(scores))
+    avg_quality = round(sum(scores) / len(scores), 1)
+    clarity = int(avg_quality * 20)
     
-    # Tailor report based on performance tier
-    if overall_score >= 90:
-        summary = (
-            f"The candidate demonstrated outstanding performance for the {role} position. "
-            "Their answers were comprehensive, highly technical, and showed a deep understanding "
-            "of industry-standard practices and optimizations."
-        )
-        strengths = [
-            "Demonstrated deep technical expertise and thorough conceptual knowledge.",
-            "Provided detailed explanations indicating hands-on experience.",
-            "Strong focus on performance optimization and web standards."
-        ]
-        weaknesses = [
-            "Could elaborate slightly more on testing strategies for large codebases.",
-            "Mentioned fewer concrete architectural system designs."
-        ]
-        recommendations = [
-            "System Architecture: Study advanced architectural patterns and system design frameworks.",
-            "Testing Coverage: Practice writing automated test coverage for system boundaries.",
-            "Senior Engineering: Explore leadership and senior engineering responsibilities."
-        ]
-    elif overall_score >= 75:
-        summary = (
-            f"The candidate demonstrated a solid, reliable foundation for the {role} role. "
-            "They answered core questions correctly, though some responses would benefit from "
-            "more technical depth and concrete optimization examples."
-        )
-        strengths = [
-            "Clear and structured communication style.",
-            "Good understanding of fundamental technologies and lifecycle methods.",
-            "Logical reasoning and structured approach to engineering problems."
-        ]
-        weaknesses = [
-            "Answers sometimes lacked specific code implementation detail.",
-            "Could benefit from detailing performance optimization methodologies."
-        ]
-        recommendations = [
-            "Performance Optimization: Study performance profiling and optimization tools.",
-            "Response Depth: Incorporate more technical vocabulary and code examples into responses.",
-            "Project Building: Build more projects emphasizing state management and system architecture."
-        ]
+    # Target counts (e.g. "7/7")
+    total_questions = len(user_answers)
+    questions_answered = f"{total_questions}/7"
+    
+    if avg_quality >= 4.5:
+        performance = "The candidate demonstrated outstanding communication and high technical confidence. Responses were comprehensive, structured, and clear."
+        resume = "The candidate's resume shows strong alignment with modern engineering standards and clear highlights of technical frameworks."
+        fit = "Highly qualified. The candidate shows strong potential for placement in the target role."
+        strengths = "Deep theoretical understanding and excellent structured communication."
+        focus = "Advanced System Design"
+        rec_len = "Answers were perfectly concise and detailed."
+        rec_core = "Review advanced system scalability patterns."
+        rec_prac = "Elaborate more on testing configurations in production environments."
+    elif avg_quality >= 3.5:
+        performance = "The candidate demonstrated solid, reliable communication skills. Answers were generally correct but could use additional depth."
+        resume = "The resume is well-written and professional, though it lacks direct focus on performance and optimization keywords."
+        fit = "Qualified. Ready for entry-level or junior role responsibilities."
+        strengths = "Solid grasp of core technologies and lifecycle methods."
+        focus = "Technical Depth"
+        rec_len = "Answers were slightly brief; consider adding more technical examples."
+        rec_core = "Practice explaining core concurrency and framework lifecycle hooks."
+        rec_prac = "Describe hands-on project architectures instead of just library APIs."
     else:
-        summary = (
-            f"The candidate showed basic familiarity with {role} concepts but requires "
-            "significant improvement. Answers were generally brief and lacked the depth, "
-            "technical terminology, and implementation examples required for the role."
-        )
-        strengths = [
-            "Demonstrated baseline familiarity with target role terms.",
-            "Logical response structures despite brief answers."
-        ]
-        weaknesses = [
-            "Responses were too short and missed technical depth.",
-            "Lack of details regarding optimization, frameworks, and tools.",
-            "No concrete project examples provided."
-        ]
-        recommendations = [
-            "Answer Length: Focus on lengthening answers and providing complete explanations.",
-            "Core Fundamentals: Review core documentation, frameworks, and fundamental concepts.",
-            "Practical Experience: Build small projects to gain practical implementation experience."
-        ]
-        
+        performance = "Candidate responses were too brief and lacked the vocabulary, technical terminology, and depth required."
+        resume = "The resume lists technologies but does not demonstrate clear project implementations and impact."
+        fit = "Needs Improvement. The candidate requires further preparation to be fit for the target role."
+        strengths = "Familiarity with role terminology and baseline concepts."
+        focus = "Technical Definitions"
+        rec_len = "Answers were extremely short. Provide detailed, multi-sentence answers in interviews."
+        rec_core = "Revisit core documentation and fundamental computer science topics."
+        rec_prac = "Build end-to-end applications to gain practical understanding of standard libraries."
+
     eval_data = {
-        "overall_score": overall_score,
-        "summary": summary,
-        "strengths": strengths,
-        "weaknesses": weaknesses,
-        "recommendations": recommendations
+        "interview_performance": performance,
+        "resume_strength": resume,
+        "role_fit": fit,
+        "key_strengths": strengths,
+        "questions_answered": questions_answered,
+        "average_response_quality": avg_quality,
+        "clarity_score": clarity,
+        "focus_area": focus,
+        "rec_answer_length": rec_len,
+        "rec_core_fundamentals": rec_core,
+        "rec_practical_experience": rec_prac
     }
     return json.dumps(eval_data)
 
@@ -317,11 +287,17 @@ def interview_chat(
 
 
 class EvaluationResponse(BaseModel):
-    overall_score: int
-    summary: str
-    strengths: list[str]
-    weaknesses: list[str]
-    recommendations: list[str]
+    interview_performance: str
+    resume_strength: str
+    role_fit: str
+    key_strengths: str
+    questions_answered: str
+    average_response_quality: float
+    clarity_score: int
+    focus_area: str
+    rec_answer_length: str
+    rec_core_fundamentals: str
+    rec_practical_experience: str
 
 @router.post("/{session_id}/evaluate", response_model=EvaluationResponse)
 def evaluate_session(
@@ -365,16 +341,21 @@ def evaluate_session(
 
     # 3. Gemini System Prompt and Model Configuration
     system_instruction = (
-        "You are an expert technical interviewer and performance evaluation system.\n"
-        "Your task is to review the mock interview transcript script between the Candidate and the Interviewer (AI).\n"
-        "Grade the candidate's performance out of 100 based on the quality, correctness, and clarity of their answers.\n"
-        "You MUST output a raw JSON object containing exactly the following keys:\n"
-        "- overall_score: (an integer from 0 to 100 representing the grade)\n"
-        "- summary: (a string summarizing their overall performance)\n"
-        "- strengths: (a list of strings detailing their technical strengths)\n"
-        "- weaknesses: (a list of strings detailing areas for improvement/weaknesses)\n"
-        "- recommendations: (a list of strings detailing actionable tips and next steps. Format each recommendation string with a prefix title followed by a colon, e.g., 'Technical Depth: Include specific implementation examples.')\n\n"
-        "Do not include any Markdown blocks, backticks, or prefix/suffix text. Output ONLY raw JSON."
+        "You are an expert technical resume screener and corporate talent acquisition specialist. "
+        "Review the provided interview chat transcript against the target job role. Be highly critical, analytical, and fair. "
+        "You MUST output a raw JSON object containing exactly the following keys and data types:\n"
+        "- interview_performance: (string) A brief paragraph summarizing their communication style, soft skills, and overall interview delivery.\n"
+        "- resume_strength: (string) A summary assessing how well-written, aligned, and professional their resume text is.\n"
+        "- role_fit: (string) A clear rating or summary explaining how qualified they are for their selected target role based on this conversation.\n"
+        "- key_strengths: (string) A highlight of their top 2-3 technical edge points.\n"
+        "- questions_answered: (string) A string showing the actual total count (e.g., '7/7' or '6/7' based on the transcript turns).\n"
+        "- average_response_quality: (float) A floating-point number from 1.0 to 5.0.\n"
+        "- clarity_score: (integer) A percentage from 0 to 100 representing how concise and clear their explanations were.\n"
+        "- focus_area: (string) A string highlighting their single biggest technical gap or area needing improvement (e.g., 'Technical Depth', 'System Design').\n"
+        "- rec_answer_length: (string) Targeted feedback regarding whether their answers were too brief, too long, or perfectly concise.\n"
+        "- rec_core_fundamentals: (string) Specific CS/IT fundamentals or theoretical concepts they missed or stumbled on.\n"
+        "- rec_practical_experience: (string) Suggestions on how to better explain their actual project frameworks, tools, or hands-on problem-solving.\n\n"
+        "You must strictly output the data in the requested JSON structure. Do not append conversational greeting text, markdown backticks, or trailing filler strings."
     )
 
     # 4. API call and DB state persistence with transaction rollback
@@ -390,7 +371,7 @@ def evaluate_session(
             system_instruction=system_instruction
         )
 
-        prompt = f"Please evaluate the following interview transcript script:\n\n{transcript_script}"
+        prompt = f"Please evaluate the following interview transcript script against the candidate's resume/CV:\n\nCandidate Resume:\n{session.resume_text if session.resume_text else 'No resume text provided.'}\n\nTranscript Script:\n{transcript_script}"
         
         response = model.generate_content(
             prompt,
@@ -401,25 +382,50 @@ def evaluate_session(
         if not evaluation_json_str:
             raise ValueError("Empty response text from Gemini API")
 
-        # Parse JSON to validate structure and get overall_score
+        # Parse JSON to validate structure and compute overall_score for DB
         import json
         eval_data = json.loads(evaluation_json_str)
-        score = int(eval_data.get("overall_score", 0))
+        quality = float(eval_data.get("average_response_quality", 4.0))
+        score = int(quality * 20)
 
         # Update session
         session.evaluation_report = evaluation_json_str
         session.overall_score = score
         session.is_completed = True
-        
+
+        # Insert EvaluationReport record
+        existing_report = db.query(EvaluationReport).filter(EvaluationReport.session_id == session.id).first()
+        if existing_report:
+            db.delete(existing_report)
+            db.flush()
+
+        eval_report_row = EvaluationReport(
+            session_id=session.id,
+            interview_performance=score,
+            resume_strength=eval_data.get("resume_strength", ""),
+            role_fit=eval_data.get("role_fit", ""),
+            key_strength=eval_data.get("key_strengths", ""),
+            questions_answered=eval_data.get("questions_answered", ""),
+            response_quality=quality,
+            clarity_score=int(eval_data.get("clarity_score", 0)),
+            focus_area=eval_data.get("focus_area", "")
+        )
+        db.add(eval_report_row)
         db.commit()
 
         # Build clean response matching EvaluationResponse
         return EvaluationResponse(
-            overall_score=score,
-            summary=eval_data.get("summary", ""),
-            strengths=eval_data.get("strengths", []),
-            weaknesses=eval_data.get("weaknesses", []),
-            recommendations=eval_data.get("recommendations", [])
+            interview_performance=eval_data.get("interview_performance", ""),
+            resume_strength=eval_data.get("resume_strength", ""),
+            role_fit=eval_data.get("role_fit", ""),
+            key_strengths=eval_data.get("key_strengths", ""),
+            questions_answered=eval_data.get("questions_answered", ""),
+            average_response_quality=quality,
+            clarity_score=int(eval_data.get("clarity_score", 0)),
+            focus_area=eval_data.get("focus_area", ""),
+            rec_answer_length=eval_data.get("rec_answer_length", ""),
+            rec_core_fundamentals=eval_data.get("rec_core_fundamentals", ""),
+            rec_practical_experience=eval_data.get("rec_practical_experience", "")
         )
 
     except Exception as exc:
@@ -431,20 +437,44 @@ def evaluate_session(
             evaluation_json_str = generate_mock_evaluation(session.target_role, transcripts)
             import json
             eval_data = json.loads(evaluation_json_str)
-            score = int(eval_data.get("overall_score", 0))
+            quality = float(eval_data.get("average_response_quality", 4.0))
+            score = int(quality * 20)
 
             session.evaluation_report = evaluation_json_str
             session.overall_score = score
             session.is_completed = True
-            
+
+            existing_report = db.query(EvaluationReport).filter(EvaluationReport.session_id == session.id).first()
+            if existing_report:
+                db.delete(existing_report)
+                db.flush()
+
+            eval_report_row = EvaluationReport(
+                session_id=session.id,
+                interview_performance=score,
+                resume_strength=eval_data.get("resume_strength", ""),
+                role_fit=eval_data.get("role_fit", ""),
+                key_strength=eval_data.get("key_strengths", ""),
+                questions_answered=eval_data.get("questions_answered", ""),
+                response_quality=quality,
+                clarity_score=int(eval_data.get("clarity_score", 0)),
+                focus_area=eval_data.get("focus_area", "")
+            )
+            db.add(eval_report_row)
             db.commit()
 
             return EvaluationResponse(
-                overall_score=score,
-                summary=eval_data.get("summary", ""),
-                strengths=eval_data.get("strengths", []),
-                weaknesses=eval_data.get("weaknesses", []),
-                recommendations=eval_data.get("recommendations", [])
+                interview_performance=eval_data.get("interview_performance", ""),
+                resume_strength=eval_data.get("resume_strength", ""),
+                role_fit=eval_data.get("role_fit", ""),
+                key_strengths=eval_data.get("key_strengths", ""),
+                questions_answered=eval_data.get("questions_answered", ""),
+                average_response_quality=quality,
+                clarity_score=int(eval_data.get("clarity_score", 0)),
+                focus_area=eval_data.get("focus_area", ""),
+                rec_answer_length=eval_data.get("rec_answer_length", ""),
+                rec_core_fundamentals=eval_data.get("rec_core_fundamentals", ""),
+                rec_practical_experience=eval_data.get("rec_practical_experience", "")
             )
         except Exception as fallback_exc:
             db.rollback()
@@ -514,11 +544,120 @@ def get_session_evaluation(
     import json
     eval_data = json.loads(session.evaluation_report)
     return EvaluationResponse(
-        overall_score=session.overall_score or 0,
-        summary=eval_data.get("summary", ""),
-        strengths=eval_data.get("strengths", []),
-        weaknesses=eval_data.get("weaknesses", []),
-        recommendations=eval_data.get("recommendations", [])
+        interview_performance=eval_data.get("interview_performance", ""),
+        resume_strength=eval_data.get("resume_strength", ""),
+        role_fit=eval_data.get("role_fit", ""),
+        key_strengths=eval_data.get("key_strengths", ""),
+        questions_answered=eval_data.get("questions_answered", ""),
+        average_response_quality=float(eval_data.get("average_response_quality", 0.0)),
+        clarity_score=int(eval_data.get("clarity_score", 0)),
+        focus_area=eval_data.get("focus_area", ""),
+        rec_answer_length=eval_data.get("rec_answer_length", ""),
+        rec_core_fundamentals=eval_data.get("rec_core_fundamentals", ""),
+        rec_practical_experience=eval_data.get("rec_practical_experience", "")
+    )
+
+
+history_router = APIRouter(prefix="/api/history", tags=["history"])
+
+
+class HistoryLogItem(BaseModel):
+    session_id: int
+    selectedRole: str
+    interviewPerformance: int
+    created_at: datetime
+
+
+class DetailedHistoryReportResponse(BaseModel):
+    session_id: int
+    selectedRole: str
+    interviewPerformance: int
+    resumeStrength: str
+    roleFit: str
+    keyStrength: str
+    questionsAnswered: str
+    responseQuality: float
+    clarityScore: int
+    focusArea: str
+    created_at: datetime
+    interview_performance_text: str
+    rec_answer_length: str
+    rec_core_fundamentals: str
+    rec_practical_experience: str
+
+
+@history_router.get("/list", response_model=list[HistoryLogItem])
+def get_history_list(
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    results = (
+        db.query(
+            EvaluationReport.session_id,
+            InterviewSession.target_role.label("selectedRole"),
+            EvaluationReport.interview_performance.label("interviewPerformance"),
+            EvaluationReport.created_at
+        )
+        .join(InterviewSession, EvaluationReport.session_id == InterviewSession.id)
+        .filter(InterviewSession.user_id == current_user.id)
+        .order_by(EvaluationReport.created_at.desc())
+        .all()
+    )
+    return results
+
+
+@history_router.get("/report/{session_id}", response_model=DetailedHistoryReportResponse)
+def get_history_report(
+    session_id: int,
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Securely verify that the requested session exists and belongs to the authenticated user
+    session = db.query(InterviewSession).filter(InterviewSession.id == session_id).first()
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Interview session not found"
+        )
+    if session.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to access this session"
+        )
+
+    # Fetch report from EvaluationReport table
+    report = db.query(EvaluationReport).filter(EvaluationReport.session_id == session_id).first()
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Evaluation report not found"
+        )
+
+    # Parse full original AI critique text/details from session.evaluation_report JSON
+    import json
+    eval_data = {}
+    if session.evaluation_report:
+        try:
+            eval_data = json.loads(session.evaluation_report)
+        except Exception:
+            pass
+
+    return DetailedHistoryReportResponse(
+        session_id=report.session_id,
+        selectedRole=session.target_role,
+        interviewPerformance=report.interview_performance or 0,
+        resumeStrength=report.resume_strength or "",
+        roleFit=report.role_fit or "",
+        keyStrength=report.key_strength or "",
+        questionsAnswered=report.questions_answered or "",
+        responseQuality=report.response_quality or 0.0,
+        clarityScore=report.clarity_score or 0,
+        focusArea=report.focus_area or "",
+        created_at=report.created_at,
+        interview_performance_text=eval_data.get("interview_performance", ""),
+        rec_answer_length=eval_data.get("rec_answer_length", ""),
+        rec_core_fundamentals=eval_data.get("rec_core_fundamentals", ""),
+        rec_practical_experience=eval_data.get("rec_practical_experience", "")
     )
 
 

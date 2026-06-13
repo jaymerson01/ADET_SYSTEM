@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { login } from '../services/api.js';
 
-export default function Login() {
+export default function Login({ onLogin }) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -23,6 +23,7 @@ export default function Login() {
     setIsSubmitting(true);
     setError('');
     try {
+      if (onLogin) onLogin();
       await login(form.email, form.password);
       navigate('/dashboard');
     } catch (err) {

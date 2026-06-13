@@ -8,6 +8,7 @@ import InterviewRoom from './pages/InterviewRoom.jsx';
 import EvaluationReport from './pages/EvaluationReport.jsx';
 import Login from './pages/Login.jsx';
 import Signup from './pages/Signup.jsx';
+import EvaluationHistory from './pages/EvaluationHistory.jsx';
 
 function App() {
   const [sessionBundle, setSessionBundle] = useState(() => {
@@ -19,8 +20,7 @@ function App() {
     return null;
   });
   const location = useLocation();
-  const showAppChrome = ['/', '/dashboard', '/interview', '/evaluation'].includes(location.pathname);
-
+  const showAppChrome = ['/', '/dashboard', '/interview', '/evaluation', '/history'].includes(location.pathname);
   const handleStartSession = ({ file, role, session_id }) => {
     if (!file || !role) return;
     localStorage.setItem('active_session_id', session_id);
@@ -28,9 +28,23 @@ function App() {
     setSessionBundle({ file, role, session_id, startedAt: new Date() });
   };
 
+  const handleClearSession = () => {
+    localStorage.removeItem('active_session_id');
+    localStorage.removeItem('session_id');
+    localStorage.removeItem('active_role');
+    localStorage.removeItem('evaluation_report');
+    localStorage.removeItem('reportData');
+    setSessionBundle(null);
+  };
+
   return (
     <div className={`app-shell ${showAppChrome ? '' : 'auth-shell'}`}>
-      {showAppChrome && <Navbar sessionActive={Boolean(sessionBundle)} />}
+      {showAppChrome && (
+        <Navbar
+          sessionActive={Boolean(sessionBundle && sessionBundle.file)}
+          onLogout={handleClearSession}
+        />
+      )}
 
       <main className={showAppChrome ? 'main-shell' : 'auth-main'}>
         <Routes>
@@ -47,8 +61,9 @@ function App() {
           />
           <Route path="/interview" element={<InterviewRoom session={sessionBundle} />} />
           <Route path="/evaluation" element={<EvaluationReport session={sessionBundle} />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login onLogin={handleClearSession} />} />
+          <Route path="/signup" element={<Signup onSignup={handleClearSession} />} />
+          <Route path="/history" element={<EvaluationHistory />} />
           <Route path="*" element={<Home />} />
         </Routes>
       </main>

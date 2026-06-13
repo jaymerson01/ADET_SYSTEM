@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from auth import get_current_user, router as auth_router
 from database import Base, engine, get_db
 from models import InterviewSession
-from routers.interview import router as interview_router
+from routers.interview import router as interview_router, history_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -30,6 +30,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(interview_router)
+app.include_router(history_router)
 
 
 

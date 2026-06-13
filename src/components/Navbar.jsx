@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-export default function Navbar({ sessionActive }) {
+export default function Navbar({ sessionActive, onLogout }) {
   const [open, setOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(localStorage.getItem('access_token')));
   const location = useLocation();
@@ -21,14 +21,15 @@ export default function Navbar({ sessionActive }) {
 
   const links = isAuthenticated
     ? [
-        { to: '/', label: 'Home' },
-        { to: '/dashboard', label: 'Dashboard' },
-        ...(sessionActive ? [{ to: '/interview', label: 'Interview' }] : []),
-        { to: '/evaluation', label: 'Evaluation' },
-      ]
+      { to: '/', label: 'Home' },
+      { to: '/dashboard', label: 'Dashboard' },
+      ...(sessionActive ? [{ to: '/interview', label: 'Interview' }] : []),
+      { to: '/evaluation', label: 'Evaluation' },
+      { to: '/history', label: 'History' },
+    ]
     : [
-        { to: '/', label: 'Home' },
-      ];
+      { to: '/', label: 'Home' },
+    ];
 
   const handleClose = () => setOpen(false);
 
@@ -45,8 +46,15 @@ export default function Navbar({ sessionActive }) {
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
-    localStorage.removeItem('active_session_id');
-    localStorage.removeItem('active_role');
+    if (onLogout) {
+      onLogout();
+    } else {
+      localStorage.removeItem('active_session_id');
+      localStorage.removeItem('session_id');
+      localStorage.removeItem('active_role');
+      localStorage.removeItem('evaluation_report');
+      localStorage.removeItem('reportData');
+    }
     setIsAuthenticated(false);
     handleClose();
     navigate('/login');

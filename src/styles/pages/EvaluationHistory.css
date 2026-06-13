@@ -1,0 +1,53 @@
+/* EvaluationHistory page styles */
+
+.section.page-shell {
+  padding: 2rem 1rem;
+  background: var(--bg);
+}
+
+.history-table table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0.5rem;
+}
+
+.history-table th {
+  background: var(--bg-light);
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.history-table td {
+  background: var(--bg-card);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+}
+
+.history-table tr:hover td {
+  background: var(--bg-hover);
+}
+
+.score-badge {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fff;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.button.button-ghost {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .history-table table {
+    font-size: 0.9rem;
+  }
+}

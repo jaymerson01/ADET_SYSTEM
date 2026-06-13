@@ -9,7 +9,7 @@ const MAJORS = [
   'BS Entertainment and Multimedia Computing',
 ];
 
-export default function Signup() {
+export default function Signup({ onSignup }) {
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -34,6 +34,7 @@ export default function Signup() {
     }
 
     try {
+      if (onSignup) onSignup();
       await signup(form.fullName, form.email, form.major, form.password);
       navigate('/dashboard');
     } catch (err) {

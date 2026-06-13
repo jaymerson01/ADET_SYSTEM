@@ -144,3 +144,40 @@ export async function getSessionEvaluation(sessionId) {
   return response.json();
 }
 
+export async function getHistoryList() {
+  const response = await fetch('/api/history/list', {
+    method: 'GET',
+    headers: {
+      ...getAuthHeaders(),
+    },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json();
+    throw new Error(errData.detail || 'Failed to fetch history list');
+  }
+
+  return response.json();
+}
+
+export async function getHistoryReport(sessionId) {
+  const cleanSessionId = parseInt(sessionId, 10);
+  if (isNaN(cleanSessionId)) {
+    throw new Error('Invalid or missing Session ID.');
+  }
+
+  const response = await fetch(`/api/history/report/${cleanSessionId}`, {
+    method: 'GET',
+    headers: {
+      ...getAuthHeaders(),
+    },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json();
+    throw new Error(errData.detail || 'Failed to fetch history report');
+  }
+
+  return response.json();
+}
+

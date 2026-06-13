@@ -1,59 +1,103 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import "../styles/pages/EvaluationReport.css";
-import { getSessionEvaluation } from "../services/api.js";
-
-const defaultReportData = {
-  metrics: {
-    interviewPerformance: 85,
-    resumeStrength: 78,
-    roleFit: 4.2,
-    keyStrength: "Communication",
-    questionsAnswered: "5/5",
-    responseQuality: 4.5,
-    clarityScore: 90,
-    focusArea: "Technical Depth",
-  },
-  recommendations: [
-    {
-      title: "Add more technical depth",
-      description: "Include specific technical examples and implementation details when answering system design and architecture questions to demonstrate deeper expertise.",
-    },
-    {
-      title: "Highlight key technologies",
-      description: "Ensure your resume prominently features the tech stack most relevant to the role you're targeting, with concrete project examples.",
-    },
-    {
-      title: "Prepare targeted questions",
-      description: "Research the company and prepare 3-5 thoughtful questions about the role, team structure, and company culture to ask at the end of the interview.",
-    },
-  ],
-};
+import { getSessionEvaluation, getHistoryReport } from "../services/api.js";
 
 export default function EvaluationReport({ reportData, session }) {
   const location = useLocation();
-  const [rawData, setRawData] = useState(reportData || location.state?.reportData || null);
+  const [rawData, setRawData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Core metric states initialized to null, empty strings, or 0
+  const [interviewPerformance, setInterviewPerformance] = useState(0);
+  const [resumeStrength, setResumeStrength] = useState("");
+  const [roleFit, setRoleFit] = useState("");
+  const [keyStrength, setKeyStrength] = useState("");
+  const [questionsAnswered, setQuestionsAnswered] = useState("");
+  const [responseQuality, setResponseQuality] = useState(0.0);
+  const [clarityScore, setClarityScore] = useState(0);
+  const [focusArea, setFocusArea] = useState("");
+  const [recommendations, setRecommendations] = useState([]);
+  const [summaryText, setSummaryText] = useState("");
+
+  // Sync state with props or location navigation data
+  useEffect(() => {
+    if (reportData) {
+      setRawData(reportData);
+    } else if (location.state?.reportData) {
+      setRawData(location.state?.reportData);
+    }
+  }, [reportData, location.state]);
+
   useEffect(() => {
     const fetchReport = async () => {
-      const sessionId = session?.session_id || localStorage.getItem('active_session_id');
+      const query = new URLSearchParams(location.search);
+      const querySessionId = query.get('session_id');
+      const historySessionId = location.state?.historySessionId;
+      const sessionId = querySessionId || historySessionId || session?.session_id || localStorage.getItem('active_session_id');
       if (rawData || !sessionId) return;
       setIsLoading(true);
       setError(null);
       try {
-        const evaluation = await getSessionEvaluation(sessionId);
+        const evaluation = historySessionId || querySessionId
+          ? await getHistoryReport(sessionId)
+          : await getSessionEvaluation(sessionId);
         setRawData(evaluation);
       } catch (err) {
-        setError(err.message || "Failed to load report from server.");
+        // Safe fallback to null state to trigger the clean placeholder card
+        console.warn("Could not fetch evaluation report from API:", err);
+        setRawData(null);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchReport();
   }, [rawData, session?.session_id]);
+
+  useEffect(() => {
+    if (rawData) {
+      const quality = rawData.average_response_quality || 0.0;
+      const overallScorePercentage = Math.round(quality * 20);
+
+      setInterviewPerformance(overallScorePercentage);
+      setResumeStrength(rawData.resume_strength || "");
+      setRoleFit(rawData.role_fit || "");
+      setKeyStrength(rawData.key_strengths || "");
+      setQuestionsAnswered(rawData.questions_answered || "");
+      setResponseQuality(quality);
+      setClarityScore(rawData.clarity_score || overallScorePercentage);
+      setFocusArea(rawData.focus_area || "");
+      setSummaryText(rawData.interview_performance || "");
+
+      setRecommendations([
+        {
+          title: "Answer Length & Depth",
+          description: rawData.rec_answer_length || "No recommendation details generated."
+        },
+        {
+          title: "CS / IT Fundamentals",
+          description: rawData.rec_core_fundamentals || "No recommendation details generated."
+        },
+        {
+          title: "Practical Projects & Experience",
+          description: rawData.rec_practical_experience || "No recommendation details generated."
+        }
+      ]);
+    } else {
+      setInterviewPerformance(0);
+      setResumeStrength("");
+      setRoleFit("");
+      setKeyStrength("");
+      setQuestionsAnswered("");
+      setResponseQuality(0.0);
+      setClarityScore(0);
+      setFocusArea("");
+      setSummaryText("");
+      setRecommendations([]);
+    }
+  }, [rawData]);
 
   if (isLoading) {
     return (
@@ -88,53 +132,32 @@ export default function EvaluationReport({ reportData, session }) {
     );
   }
 
-  const isRealData = Boolean(rawData);
+  const isEmpty = !rawData || Object.keys(rawData).length === 0;
 
-  // Initialize defaults
-  let metrics = defaultReportData.metrics;
-  let recommendations = defaultReportData.recommendations;
-  let strengths = [];
-  let weaknesses = [];
-  let summaryText = "Comprehensive AI-driven analysis of your interview responses and resume alignment with your target role.";
-
-  if (isRealData) {
-    summaryText = rawData.summary || summaryText;
-    
-    // Map recommendations from a list of strings
-    recommendations = (rawData.recommendations || []).map((rec, index) => {
-      if (typeof rec === 'string') {
-        const colonIndex = rec.indexOf(':');
-        if (colonIndex !== -1) {
-          return {
-            title: rec.substring(0, colonIndex).trim(),
-            description: rec.substring(colonIndex + 1).trim()
-          };
-        }
-        return {
-          title: `Recommendation ${index + 1}`,
-          description: rec
-        };
-      }
-      return rec;
-    });
-
-    strengths = rawData.strengths || [];
-    weaknesses = rawData.weaknesses || [];
-
-    // Map metrics based on overall score
-    metrics = {
-      interviewPerformance: rawData.overall_score || 0,
-      resumeStrength: 85, // Static fallback placeholder for resume
-      roleFit: parseFloat((rawData.overall_score / 20).toFixed(1)),
-      keyStrength: strengths[0] || "Structured Communication",
-      questionsAnswered: "Completed",
-      responseQuality: (rawData.overall_score / 20).toFixed(1),
-      clarityScore: rawData.overall_score || 0,
-      focusArea: weaknesses[0] || "Interview Performance",
-    };
+  // Render empty placeholder state if no evaluation data exists
+  if (isEmpty) {
+    return (
+      <section className="section page-shell page-stack" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '65vh' }}>
+        <div className="card" style={{ padding: '3.5rem 2.5rem', textAlign: 'center', maxWidth: '550px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ fontSize: '4.5rem', filter: 'drop-shadow(0 8px 16px rgba(var(--accent-rgb), 0.15))', animation: 'pulse 2.5s infinite ease-in-out' }}>📊</div>
+          <h3 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700 }}>No Evaluation Data Available Yet</h3>
+          <p style={{ color: 'var(--text-secondary)', margin: 0, lineHeight: '1.6', fontSize: '1rem' }}>
+            Complete your first mock interview to unlock your performance metrics report!
+          </p>
+          <Link to="/dashboard" className="button button-primary" style={{ textDecoration: 'none', padding: '0.75rem 2rem', borderRadius: '8px', fontWeight: 600, marginTop: '0.5rem' }}>
+            Start Mock Interview
+          </Link>
+          <style>{`
+            @keyframes pulse {
+              0% { transform: scale(1); opacity: 0.9; }
+              50% { transform: scale(1.05); opacity: 1; }
+              100% { transform: scale(1); opacity: 0.9; }
+            }
+          `}</style>
+        </div>
+      </section>
+    );
   }
-
-
 
   return (
     <section className="section page-shell page-stack">
@@ -142,7 +165,7 @@ export default function EvaluationReport({ reportData, session }) {
       <div className="section-heading">
         <p className="eyebrow">Your Performance</p>
         <h2>Interview & Resume Evaluation</h2>
-        <p>{summaryText}</p>
+        <p>Comprehensive AI-driven review of your session transcript and resume alignment.</p>
       </div>
 
       {/* Top Performance Scorecards (4-Column Grid) */}
@@ -150,39 +173,33 @@ export default function EvaluationReport({ reportData, session }) {
         {/* Card 1: Interview Performance */}
         <article className="score-card">
           <p className="panel-label">💼 Interview Performance</p>
-          <h3>{metrics.interviewPerformance}%</h3>
-          <p>Overall score based on clarity, technical accuracy, and confidence across all responses.</p>
+          <h3>{interviewPerformance}%</h3>
+          <p>{summaryText}</p>
         </article>
 
         {/* Card 2: Resume Strength */}
         <article className="score-card">
           <p className="panel-label">📄 Resume Strength</p>
-          <h3>{metrics.resumeStrength}%</h3>
-          <p>Formatting, keyword usage, and alignment with your target role. Ready for recruiters.</p>
+          <p style={{ marginTop: "1rem", color: "var(--text-secondary)", fontSize: "0.9rem", lineHeight: "1.5" }}>
+            {resumeStrength}
+          </p>
         </article>
 
         {/* Card 3: Role Fit */}
         <article className="score-card">
           <p className="panel-label">🎯 Role Fit</p>
-          <h3>{metrics.roleFit}</h3>
-          <p>How well your responses align with your target role.</p>
-          {/* Star rating visual */}
-          <div style={{ display: "flex", gap: "0.3rem", marginTop: "0.5rem" }}>
-            {[...Array(5)].map((_, i) => (
-              <span key={i} style={{ fontSize: "1.2rem", color: i < Math.floor(metrics.roleFit) ? "#FCD34D" : "#D1D5DB" }}>
-                ★
-              </span>
-            ))}
-          </div>
+          <p style={{ marginTop: "1rem", color: "var(--text-secondary)", fontSize: "0.9rem", lineHeight: "1.5" }}>
+            {roleFit}
+          </p>
         </article>
 
         {/* Card 4: Key Strength */}
         <article className="score-card">
           <p className="panel-label">✨ Key Strength</p>
-          <h3 style={{ background: "none", WebkitTextFillColor: "unset", color: "var(--accent)" }}>
-            {metrics.keyStrength}
-          </h3>
-          <p>You demonstrated clear and structured responses with compelling examples.</p>
+          <h4 style={{ margin: "1rem 0 0.5rem 0", color: "var(--accent)", fontWeight: 700 }}>
+            {keyStrength}
+          </h4>
+          <p>Demonstrated strong foundational capabilities in this primary area.</p>
         </article>
       </div>
 
@@ -192,26 +209,26 @@ export default function EvaluationReport({ reportData, session }) {
         <div className="metric-grid">
           {/* Metric 1: Questions Answered */}
           <div className="metric-stat">
-            <span className="metric-value">{metrics.questionsAnswered}</span>
+            <span className="metric-value">{questionsAnswered}</span>
             <span className="metric-label">Questions Answered</span>
           </div>
 
           {/* Metric 2: Response Quality */}
           <div className="metric-stat">
-            <span className="metric-value">{metrics.responseQuality}</span>
+            <span className="metric-value">{responseQuality.toFixed(1)}</span>
             <span className="metric-label">Avg Response Quality (/ 5.0)</span>
           </div>
 
           {/* Metric 3: Clarity Score */}
           <div className="metric-stat">
-            <span className="metric-value">{metrics.clarityScore}%</span>
+            <span className="metric-value">{clarityScore}%</span>
             <span className="metric-label">Clarity Score</span>
           </div>
 
           {/* Metric 4: Focus Area */}
           <div className="metric-stat">
             <span className="metric-value" style={{ fontSize: "1.1rem", color: "var(--text-secondary)" }}>
-              {metrics.focusArea}
+              {focusArea}
             </span>
             <span className="metric-label">Focus Area</span>
           </div>
@@ -220,7 +237,7 @@ export default function EvaluationReport({ reportData, session }) {
 
       {/* AI Recommendations Block */}
       <div className="card" style={{ padding: "2rem", marginTop: "2rem" }}>
-        <h3 style={{ marginBottom: "1.5rem" }}>📋 AI Recommendations</h3>
+        <h3 style={{ marginBottom: "1.5rem" }}>📋 AI Actionable Recommendations</h3>
         <div style={{ display: "grid", gap: "1rem" }}>
           {recommendations.map((rec, index) => (
             <div
@@ -240,30 +257,6 @@ export default function EvaluationReport({ reportData, session }) {
           ))}
         </div>
       </div>
-
-      {isRealData && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2rem", marginTop: "2rem" }}>
-          {/* Strengths Card */}
-          <div className="card" style={{ padding: "2rem" }}>
-            <h3 style={{ marginBottom: "1.5rem", color: "#16a34a" }}>✨ Key Strengths</h3>
-            <ul style={{ paddingLeft: "1.25rem", margin: 0, display: "grid", gap: "0.75rem" }}>
-              {strengths.map((s, index) => (
-                <li key={index} style={{ color: "var(--text-secondary)", lineHeight: "1.5" }}>{s}</li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Weaknesses Card */}
-          <div className="card" style={{ padding: "2rem" }}>
-            <h3 style={{ marginBottom: "1.5rem", color: "#dc2626" }}>⚠️ Areas for Improvement</h3>
-            <ul style={{ paddingLeft: "1.25rem", margin: 0, display: "grid", gap: "0.75rem" }}>
-              {weaknesses.map((w, index) => (
-                <li key={index} style={{ color: "var(--text-secondary)", lineHeight: "1.5" }}>{w}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
 
       {/* Bottom Action Container */}
       <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginTop: "2rem", justifyContent: "flex-end" }}>
