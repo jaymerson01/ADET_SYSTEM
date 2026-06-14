@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { FileText, Target, Bot, BarChart3 } from "lucide-react";
 
 function Home() {
   return (
@@ -78,7 +79,9 @@ function Home() {
 
         <div className="feature-grid">
           <div className="feature-card">
-            <div className="feature-icon">📄</div>
+            <div className="feature-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <FileText className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+            </div>
             <h3>Resume Upload</h3>
             <p>
               Upload your PDF resume and connect it to your interview preparation
@@ -87,7 +90,9 @@ function Home() {
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon">🎯</div>
+            <div className="feature-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Target className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+            </div>
             <h3>Role Selection</h3>
             <p>
               Choose your target IT role such as Frontend Developer, Backend
@@ -96,7 +101,9 @@ function Home() {
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon">🤖</div>
+            <div className="feature-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Bot className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+            </div>
             <h3>Mock Interview</h3>
             <p>
               Practice answering interview questions in a realistic AI-style chat
@@ -105,7 +112,9 @@ function Home() {
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon">📊</div>
+            <div className="feature-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <BarChart3 className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+            </div>
             <h3>Evaluation Report</h3>
             <p>
               Review your performance through score cards, strengths, weaknesses,

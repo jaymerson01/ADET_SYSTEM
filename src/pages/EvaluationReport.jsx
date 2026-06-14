@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import "../styles/pages/EvaluationReport.css";
 import { getSessionEvaluation, getHistoryReport } from "../services/api.js";
+import { Loader2, AlertTriangle, BarChart3, Briefcase, FileText, Target, Sparkles, ClipboardList, RotateCcw } from "lucide-react";
 
 export default function EvaluationReport({ reportData, session }) {
   const location = useLocation();
@@ -103,16 +104,10 @@ export default function EvaluationReport({ reportData, session }) {
     return (
       <section className="section page-shell page-stack" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '1rem', animation: 'spin 1.5s linear infinite' }}>⏳</div>
+          <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mx-auto mb-4" />
           <h3>Generating report metrics...</h3>
           <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Please wait while we fetch your analysis from the server.</p>
         </div>
-        <style>{`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
       </section>
     );
   }
@@ -121,7 +116,7 @@ export default function EvaluationReport({ reportData, session }) {
     return (
       <section className="section page-shell page-stack" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
         <div className="card" style={{ padding: '2.5rem', textAlign: 'center', maxWidth: '500px' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h3 style={{ color: '#dc2626', marginBottom: '1rem' }}>Error Loading Evaluation</h3>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>{error}</p>
           <Link to="/dashboard" className="button button-primary" style={{ textDecoration: 'none' }}>
@@ -139,7 +134,7 @@ export default function EvaluationReport({ reportData, session }) {
     return (
       <section className="section page-shell page-stack" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '65vh' }}>
         <div className="card" style={{ padding: '3.5rem 2.5rem', textAlign: 'center', maxWidth: '550px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
-          <div style={{ fontSize: '4.5rem', filter: 'drop-shadow(0 8px 16px rgba(var(--accent-rgb), 0.15))', animation: 'pulse 2.5s infinite ease-in-out' }}>📊</div>
+          <BarChart3 className="w-16 h-16 text-indigo-500 mx-auto mb-4 animate-pulse" style={{ filter: 'drop-shadow(0 8px 16px rgba(var(--accent-rgb), 0.15))' }} />
           <h3 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700 }}>No Evaluation Data Available Yet</h3>
           <p style={{ color: 'var(--text-secondary)', margin: 0, lineHeight: '1.6', fontSize: '1rem' }}>
             Complete your first mock interview to unlock your performance metrics report!
@@ -147,13 +142,6 @@ export default function EvaluationReport({ reportData, session }) {
           <Link to="/dashboard" className="button button-primary" style={{ textDecoration: 'none', padding: '0.75rem 2rem', borderRadius: '8px', fontWeight: 600, marginTop: '0.5rem' }}>
             Start Mock Interview
           </Link>
-          <style>{`
-            @keyframes pulse {
-              0% { transform: scale(1); opacity: 0.9; }
-              50% { transform: scale(1.05); opacity: 1; }
-              100% { transform: scale(1); opacity: 0.9; }
-            }
-          `}</style>
         </div>
       </section>
     );
@@ -172,14 +160,20 @@ export default function EvaluationReport({ reportData, session }) {
       <div className="evaluation-grid">
         {/* Card 1: Interview Performance */}
         <article className="score-card">
-          <p className="panel-label">💼 Interview Performance</p>
+          <p className="panel-label">
+            <Briefcase className="w-4 h-4 mr-2 text-indigo-600 dark:text-indigo-400 inline-block align-middle" />
+            Interview Performance
+          </p>
           <h3>{interviewPerformance}%</h3>
           <p>{summaryText}</p>
         </article>
 
         {/* Card 2: Resume Strength */}
         <article className="score-card">
-          <p className="panel-label">📄 Resume Strength</p>
+          <p className="panel-label">
+            <FileText className="w-4 h-4 mr-2 text-indigo-600 dark:text-indigo-400 inline-block align-middle" />
+            Resume Strength
+          </p>
           <p style={{ marginTop: "1rem", color: "var(--text-secondary)", fontSize: "0.9rem", lineHeight: "1.5" }}>
             {resumeStrength}
           </p>
@@ -187,7 +181,10 @@ export default function EvaluationReport({ reportData, session }) {
 
         {/* Card 3: Role Fit */}
         <article className="score-card">
-          <p className="panel-label">🎯 Role Fit</p>
+          <p className="panel-label">
+            <Target className="w-4 h-4 mr-2 text-indigo-600 dark:text-indigo-400 inline-block align-middle" />
+            Role Fit
+          </p>
           <p style={{ marginTop: "1rem", color: "var(--text-secondary)", fontSize: "0.9rem", lineHeight: "1.5" }}>
             {roleFit}
           </p>
@@ -195,7 +192,10 @@ export default function EvaluationReport({ reportData, session }) {
 
         {/* Card 4: Key Strength */}
         <article className="score-card">
-          <p className="panel-label">✨ Key Strength</p>
+          <p className="panel-label">
+            <Sparkles className="w-4 h-4 mr-2 text-indigo-600 dark:text-indigo-400 inline-block align-middle" />
+            Key Strength
+          </p>
           <h4 style={{ margin: "1rem 0 0.5rem 0", color: "var(--accent)", fontWeight: 700 }}>
             {keyStrength}
           </h4>
@@ -237,7 +237,10 @@ export default function EvaluationReport({ reportData, session }) {
 
       {/* AI Recommendations Block */}
       <div className="card" style={{ padding: "2rem", marginTop: "2rem" }}>
-        <h3 style={{ marginBottom: "1.5rem" }}>📋 AI Actionable Recommendations</h3>
+        <h3 style={{ marginBottom: "1.5rem" }}>
+          <ClipboardList className="w-5 h-5 mr-2 text-indigo-600 dark:text-indigo-400 inline-block align-middle" />
+          AI Actionable Recommendations
+        </h3>
         <div style={{ display: "grid", gap: "1rem" }}>
           {recommendations.map((rec, index) => (
             <div
@@ -263,9 +266,10 @@ export default function EvaluationReport({ reportData, session }) {
         <Link
           to="/dashboard"
           className="button button-primary"
-          style={{ textDecoration: "none" }}
+          style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
         >
-          ↻ Practice Again
+          <RotateCcw className="w-4 h-4 mr-2" />
+          Practice Again
         </Link>
       </div>
     </section>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getHistoryList, getHistoryReport } from '../services/api.js';
 import EvaluationReport from './EvaluationReport.jsx';
+import { Loader2, AlertTriangle, BarChart3, X } from 'lucide-react';
 import '../styles/pages/EvaluationHistory.css';
 
 export default function EvaluationHistory() {
@@ -63,7 +64,7 @@ export default function EvaluationHistory() {
     return (
       <section className="section page-shell page-stack" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '1rem', animation: 'spin 1.5s linear infinite' }}>⏳</div>
+          <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mx-auto mb-4" />
           <h3>Loading interview history...</h3>
         </div>
       </section>
@@ -74,7 +75,7 @@ export default function EvaluationHistory() {
     return (
       <section className="section page-shell page-stack" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
         <div className="card" style={{ padding: '2.5rem', textAlign: 'center', maxWidth: '500px' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h3 style={{ color: '#dc2626', marginBottom: '1rem' }}>Error Loading History</h3>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>{error}</p>
           <Link to="/dashboard" className="button button-primary" style={{ textDecoration: 'none' }}>
@@ -89,7 +90,7 @@ export default function EvaluationHistory() {
     return (
       <section className="section page-shell page-stack" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '65vh' }}>
         <div className="card" style={{ padding: '3.5rem 2.5rem', textAlign: 'center', maxWidth: '550px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
-          <div style={{ fontSize: '4.5rem', filter: 'drop-shadow(0 8px 16px rgba(var(--accent-rgb), 0.15))', animation: 'pulse 2.5s infinite ease-in-out' }}>📊</div>
+          <BarChart3 className="w-16 h-16 text-indigo-500 mx-auto mb-4 animate-pulse" style={{ filter: 'drop-shadow(0 8px 16px rgba(var(--accent-rgb), 0.15))' }} />
           <h3 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700 }}>No Past Interviews Found</h3>
           <p style={{ color: 'var(--text-secondary)', margin: 0, lineHeight: '1.6', fontSize: '1rem' }}>
             You haven't completed any interviews yet! Head over to the Resume Upload section to kick off your first session.
@@ -147,7 +148,9 @@ export default function EvaluationHistory() {
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowModal(false)}>✖</button>
+            <button className="modal-close" onClick={() => setShowModal(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <X className="w-5 h-5" />
+            </button>
             {modalLoading && <p>Loading report...</p>}
             {modalError && <p style={{ color: '#dc2626' }}>{modalError}</p>}
             {modalReport && <EvaluationReport reportData={modalReport} session={null} />}

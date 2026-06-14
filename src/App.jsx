@@ -20,6 +20,18 @@ function App() {
     return null;
   });
   const location = useLocation();
+
+  useEffect(() => {
+    const query = new URLSearchParams(location.search);
+    const token = query.get('token');
+    if (token) {
+      localStorage.setItem('access_token', token);
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+      window.dispatchEvent(new Event('storage'));
+    }
+  }, [location]);
+
   const showAppChrome = ['/', '/dashboard', '/interview', '/evaluation', '/history'].includes(location.pathname);
   const handleStartSession = ({ file, role, session_id }) => {
     if (!file || !role) return;

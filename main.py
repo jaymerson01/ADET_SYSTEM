@@ -15,6 +15,7 @@ from auth import get_current_user, router as auth_router
 from database import Base, engine, get_db
 from models import InterviewSession
 from routers.interview import router as interview_router, history_router
+from routers.google_auth import router as google_auth_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -31,6 +32,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(interview_router)
 app.include_router(history_router)
+app.include_router(google_auth_router)
 
 
 

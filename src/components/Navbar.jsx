@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
 
 export default function Navbar({ sessionActive, onLogout }) {
   const [open, setOpen] = useState(false);
@@ -104,8 +105,9 @@ export default function Navbar({ sessionActive, onLogout }) {
             onClick={() => setOpen((prev) => !prev)}
             aria-label="Toggle menu"
             aria-expanded={open}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', padding: 0 }}
           >
-            ☰
+            {open ? <X className="w-6 h-6 text-current" /> : <Menu className="w-6 h-6 text-current" />}
           </button>
         </div>
       </div>

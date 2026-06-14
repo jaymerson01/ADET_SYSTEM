@@ -13,7 +13,8 @@ class User(Base):
     name = Column(String(100), nullable=False)
     email = Column(String(255), unique=True, index=True, nullable=False)
     course = Column(String(100), nullable=True)
-    password_hash = Column(String(255), nullable=False)
+    password_hash = Column(String(255), nullable=True)
+    google_id = Column(String(100), unique=True, index=True, nullable=True)
 
     interview_sessions = relationship("InterviewSession", back_populates="user", cascade="all, delete-orphan")
 

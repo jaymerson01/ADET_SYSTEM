@@ -2,8 +2,18 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DragDrop from '../components/DragDrop.jsx';
 import { startInterviewSession } from '../services/api.js';
+import { FileText, UploadCloud, CheckCircle2, AlertCircle, Target, Lightbulb } from 'lucide-react';
 
-const IT_ROLES = ['Frontend Developer', 'Backend Developer', 'QA Engineer', 'Data Analyst'];
+const IT_ROLES = [
+  'Frontend Developer',
+  'Backend Developer',
+  'QA Engineer',
+  'Data Analyst',
+  'Data Scientist',
+  'DevOps Engineer',
+  'Cybersecurity Analyst',
+  'Mobile App Developer'
+];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 export default function Dashboard({ onStartSession, initialRole = IT_ROLES[0], initialFile = null }) {
@@ -82,18 +92,47 @@ export default function Dashboard({ onStartSession, initialRole = IT_ROLES[0], i
 
       <div className="dashboard-grid">
         <div className="upload-card">
-          <h3 className="panel-title">📄 Your Resume</h3>
+          <h3 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+            <FileText style={{ width: '1.25rem', height: '1.25rem', color: 'var(--accent-blue)' }} />
+            <span>Your Resume</span>
+          </h3>
           <DragDrop onFile={handleFileInput} accept="application/pdf">
             <div className="upload-inner">
               {!selectedFile ? (
                 <>
-                  <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>⬆️</div>
+                  <div style={{
+                    width: '56px',
+                    height: '56px',
+                    margin: '0 auto 0.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '18px',
+                    background: 'white',
+                    color: 'var(--accent-blue)',
+                    boxShadow: '0 12px 30px rgba(37, 99, 235, 0.14)'
+                  }}>
+                    <UploadCloud style={{ width: '28px', height: '28px' }} />
+                  </div>
                   <p><strong>Drop your resume here or click to browse</strong></p>
                   <p className="muted">PDF format only, up to 5MB</p>
                 </>
               ) : (
                 <>
-                  <div style={{ fontSize: '2rem' }}>✅</div>
+                  <div style={{
+                    width: '56px',
+                    height: '56px',
+                    margin: '0 auto 0.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '18px',
+                    background: 'white',
+                    color: '#10b981',
+                    boxShadow: '0 12px 30px rgba(16, 185, 129, 0.14)'
+                  }}>
+                    <CheckCircle2 style={{ width: '28px', height: '28px' }} />
+                  </div>
                   <p><strong>{selectedFile.name}</strong></p>
                   <p className="muted">{(selectedFile.size / 1024).toFixed(1)} KB</p>
                   {uploadProgress > 0 && uploadProgress < 100 && (
@@ -103,15 +142,23 @@ export default function Dashboard({ onStartSession, initialRole = IT_ROLES[0], i
                   )}
                 </>
               )}
-              {fileError && <p style={{ color: '#dc2626', fontSize: '0.9rem', margin: '0.5rem 0 0' }}>⚠️ {fileError}</p>}
+              {fileError && (
+                <p style={{ color: '#dc2626', fontSize: '0.9rem', margin: '0.5rem 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+                  <AlertCircle style={{ width: '1rem', height: '1rem', color: '#dc2626' }} />
+                  <span>{fileError}</span>
+                </p>
+              )}
             </div>
           </DragDrop>
         </div>
 
         <div className="dashboard-panel">
           <div className="role-card">
-            <h3 className="panel-title">🎯 Target Role</h3>
-            <label className="input-group">
+            <h3 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <Target style={{ width: '1.25rem', height: '1.25rem', color: 'var(--accent-blue)' }} />
+              <span>Target Role</span>
+            </h3>
+            <label className="input-group" style={{ marginBottom: '1.5rem', display: 'block' }}>
               <span>Select your IT role</span>
               <select value={selectedRole} onChange={(event) => setSelectedRole(event.target.value)}>
                 {IT_ROLES.map((role) => (
@@ -122,8 +169,11 @@ export default function Dashboard({ onStartSession, initialRole = IT_ROLES[0], i
               </select>
             </label>
 
-            <div className="question-banner">
-              <h3>💡 Pro Tip</h3>
+            <div className="question-banner" style={{ marginBottom: '1.5rem' }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Lightbulb style={{ width: '1.25rem', height: '1.25rem', color: '#f59e0b' }} />
+                <span>Pro Tip</span>
+              </h3>
               <p>Selecting the right role helps our AI generate relevant questions and provide personalized feedback for your target position.</p>
             </div>
 

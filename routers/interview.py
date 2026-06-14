@@ -48,6 +48,42 @@ MOCK_QUESTIONS = {
         "How do you explain complex data insights to non-technical stakeholders?",
         "What is A/B testing, and how do you determine statistical significance?",
         "How do you write a SQL query to find the second highest salary in an employees table?"
+    ],
+    "Data Scientist": [
+        "What is the difference between supervised and unsupervised learning?",
+        "How do you address overfitting in a machine learning model?",
+        "Can you explain the bias-variance tradeoff?",
+        "What are the key differences between a Random Forest and a Gradient Boosting model?",
+        "How do you handle imbalanced datasets when training a classifier?",
+        "What metric would you use to evaluate a regression model vs a classification model?",
+        "Can you describe a data science project you worked on and the impact it had?"
+    ],
+    "DevOps Engineer": [
+        "What is the difference between Continuous Integration (CI) and Continuous Deployment (CD)?",
+        "How do you manage infrastructure as code (IaC), and what tools do you prefer?",
+        "Can you describe the containerization concept and why you would use Docker?",
+        "What is Kubernetes, and how does it manage container orchestration and scaling?",
+        "How do you implement secure secrets management in a CI/CD pipeline?",
+        "What are the best practices for setting up zero-downtime deployments (e.g., blue-green, canary)?",
+        "How do you monitor and alert on system performance and logs in a production environment?"
+    ],
+    "Cybersecurity Analyst": [
+        "What is the difference between symmetric and asymmetric encryption?",
+        "Can you explain the concept of SQL injection and how to prevent it?",
+        "What is a Cross-Site Scripting (XSS) attack, and how do you mitigate it?",
+        "How do you conduct vulnerability scanning and risk assessment on an enterprise network?",
+        "What is the role of a firewall, and how does it differ from an Intrusion Detection System (IDS)?",
+        "How would you handle a suspected security breach or active ransomware incident?",
+        "What is multi-factor authentication (MFA) and why is it critical for securing API endpoints?"
+    ],
+    "Mobile App Developer": [
+        "What is the difference between native, hybrid, and cross-platform mobile app development?",
+        "How do you handle state management in Flutter or React Native?",
+        "What are the key differences between iOS and Android application lifecycles?",
+        "How do you optimize mobile app performance and minimize battery/memory usage?",
+        "What is your approach to local data persistence in mobile apps (e.g., SQLite, Room, Core Data)?",
+        "How do you secure sensitive user credentials or tokens on a mobile device?",
+        "What is the process of preparing and deploying a mobile app to the Google Play Store and Apple App Store?"
     ]
 }
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signup } from '../services/api.js';
+import { AlertCircle } from 'lucide-react';
 
 const MAJORS = [
   'BS Information Technology',
@@ -61,7 +62,12 @@ export default function Signup({ onSignup }) {
           <p className="muted lead-text">Sign up to access mock interviews, resume review, and career prep tools.</p>
         </div>
 
-        {error && <p style={{ color: '#dc2626', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', padding: '0.75rem', borderRadius: '8px', fontSize: '0.9rem', marginBottom: '1.5rem', textAlign: 'center' }}>⚠️ {error}</p>}
+        {error && (
+          <p style={{ color: '#dc2626', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', padding: '0.75rem', borderRadius: '8px', fontSize: '0.9rem', marginBottom: '1.5rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <AlertCircle className="w-4 h-4 mr-2 text-red-600" />
+            {error}
+          </p>
+        )}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <label className="input-group">

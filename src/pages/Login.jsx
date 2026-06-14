@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { login } from '../services/api.js';
+import { AlertCircle } from 'lucide-react';
 
 export default function Login({ onLogin }) {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -8,14 +9,8 @@ export default function Login({ onLogin }) {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleGoogleLogin = async () => {
-    setIsSubmitting(true);
-    setError('');
-    try {
-      // Placeholder for Google login integration
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleGoogleLogin = () => {
+    window.location.href = '/api/auth/google/login';
   };
 
   const handleSubmit = async (event) => {
@@ -42,7 +37,12 @@ export default function Login({ onLogin }) {
           <p className="lead-text">Sign in with your school email to continue.</p>
         </div>
 
-        {error && <p style={{ color: '#dc2626', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', padding: '0.75rem', borderRadius: '8px', fontSize: '0.9rem', marginBottom: '1.5rem', textAlign: 'center' }}>⚠️ {error}</p>}
+        {error && (
+          <p style={{ color: '#dc2626', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', padding: '0.75rem', borderRadius: '8px', fontSize: '0.9rem', marginBottom: '1.5rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <AlertCircle className="w-4 h-4 mr-2 text-red-600" />
+            {error}
+          </p>
+        )}
 
         <button type="button" className="button button-secondary w-full" onClick={handleGoogleLogin} disabled={isSubmitting} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">

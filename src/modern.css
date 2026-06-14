@@ -2210,17 +2210,7 @@ button.primary:hover {
 }
 
 .upload-inner::before {
-  content: "⬆";
-  width: 56px;
-  height: 56px;
-  margin: 0 auto 0.75rem;
-  display: grid;
-  place-items: center;
-  border-radius: 18px;
-  background: white;
-  color: var(--accent-blue);
-  font-size: 1.6rem;
-  box-shadow: 0 12px 30px rgba(37,99,235,0.14);
+  display: none !important;
 }
 
 /* interview progress */
