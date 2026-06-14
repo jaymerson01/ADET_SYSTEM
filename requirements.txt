@@ -9,3 +9,5 @@ google-generativeai
 pwdlib[argon2]
 pyjwt
 psycopg2-binary
+sqlalchemy
+httpx
