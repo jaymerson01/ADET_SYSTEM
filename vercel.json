@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://your-backend-url.com/api/:path*"
+      "destination": "https://jobreadyai-backend.onrender.com/api/:path*"
     },
     {
       "source": "/auth/:path*",
-      "destination": "https://your-backend-url.com/auth/:path*"
+      "destination": "https://jobreadyai-backend.onrender.com/auth/:path*"
     },
     {
       "source": "/(.*)",
